@@ -1,50 +1,111 @@
-'use client'
+"use client"
 
-import Image from "next/image";
-import Link from "next/link";
-import {Icon} from "@iconify-icon/react";
+import { Menu } from "lucide-react"
+import Link from "next/link"
+import { useState } from "react"
+
+import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger} from "@/components/ui/sheet";
+import {VisuallyHidden} from "@radix-ui/react-visually-hidden";
+import {Button} from "@/components/ui/button";
 
 export default function Navbar() {
-    return(
-        <>
-        <nav className="py-4 navbar fixed w-full !bg-white z-50 bg-opacity-100 backdrop-filter-none">
-            <div className="lg:flex hidden justify-between items-center container mx-auto">
-                <div className="flex gap-2 logo-wrapper items-center">
-                    <div className="flex justify-center items-center size-10 rounded-[6px] bg-main">
-                        <Image width={25} height={29} src="/img/logo-icon.svg" alt="Logo Icon" />
+    const [isOpen, setIsOpen] = useState(false)
+
+    const navigationLinks = [
+        { name: "Home", href: "/" },
+        { name: "Ask AI", href: "/ask-ai" },
+        { name: "Product", href: "/product" },
+        { name: "About", href: "/about" },
+    ]
+
+    return (
+        <nav className="w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 py-2">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="flex h-16 items-center justify-between">
+                    {/* Logo */}
+                    <div className="flex items-center">
+                        <Link href="/" className="flex items-center space-x-2">
+                            <div className="flex size-10 items-center justify-center rounded-lg bg-main">
+                                <img src="/img/logo-icon.svg" alt=""/>
+                            </div>
+                            <span className="title-font text-3xl text-main">Avara</span>
+                        </Link>
                     </div>
-                    <h2 className="text-main title-font text-3xl">Avara</h2>
-                </div>
-                <div className="flex gap-7 items-center">
-                    <div className="flex gap-6">
-                        <Link href={'/'} className={'nav-link active'}>Home</Link>
-                        <Link href={'/'} className={'nav-link'}>Ask AI</Link>
-                        <Link href={'/'} className={'nav-link'}>Product</Link>
-                        <Link href={'/'} className={'nav-link'}>About</Link>
+
+                    {/* Desktop Navigation */}
+                    <div className="hidden md:block">
+                        <div className="ml-10 flex items-baseline space-x-8">
+                            {navigationLinks.map((link) => (
+                                <Link
+                                    key={link.name}
+                                    href={link.href}
+                                    className="nav-link text-center"
+                                >
+                                    {link.name}
+                                </Link>
+                            ))}
+                        </div>
                     </div>
-                    <button className={"btn btn-primary flex gap-3 items-center"}>
-                        <Image width={23} height={23} src={"/icon/chat.svg"} alt="Chat Icon" />
-                        New Chat
-                    </button>
-                </div>
-            </div>
-            <div className="flex lg:hidden justify-between items-center container mx-auto px-4">
-                <div className="flex gap-2 logo-wrapper items-center">
-                    <div className="flex justify-center items-center size-10 rounded-[6px] bg-main">
-                        <Image width={25} height={29} src="/img/logo-icon.svg" alt="Logo Icon" />
+
+                    {/* Desktop CTA Button */}
+                    <div className="hidden md:block">
+                        <button className="btn btn-primary flex items-center gap-3">
+                            <img src="/icon/chat.svg" alt=""/>
+                            New Chat
+                        </button>
                     </div>
-                    <h2 className="text-main title-font text-3xl">Avara</h2>
-                </div>
-                <div className="flex gap-3 items-center">
-                    <button className={"btn btn-primary"}>
-                        <Image width={23} height={23} src={"/icon/chat.svg"} alt="Chat Icon" />
-                    </button>
-                    <button className={"btn btn-primary h-fit flex items-center"}>
-                        <Icon icon="material-symbols:menu-rounded" width="23" height="23" className={"h-fit"}/>
-                    </button>
+
+                    {/* Mobile menu button */}
+                    <div className="md:hidden">
+                        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                            <SheetHeader>
+                                <VisuallyHidden>
+                                    <SheetTitle>Navigation Menu</SheetTitle>
+                                </VisuallyHidden>
+                            </SheetHeader>
+                            <SheetTrigger asChild>
+                                <Button variant="ghost" className={"btn btn-primary"} size="icon">
+                                    <Menu className="h-6 w-6 text-white" />
+                                    <span className="sr-only">Open main menu</span>
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="top" className="w-full">
+                                <div className="flex flex-col space-y-4 mt-6 max-w-md mx-auto">
+                                    {/* Mobile Logo */}
+                                    <div className="flex items-center justify-center space-x-2 pb-4 border-b">
+                                        <div className="flex size-10 items-center justify-center rounded-lg bg-main">
+                                            <img src="/img/logo-icon.svg" alt=""/>
+                                        </div>
+                                        <span className="text-3xl title-font text-main">Avara</span>
+                                    </div>
+
+                                    {/* Mobile Navigation Links */}
+                                    <div className="flex flex-col space-y-2">
+                                        {navigationLinks.map((link) => (
+                                            <Link
+                                                key={link.name}
+                                                href={link.href}
+                                                className="nav-link text-center"
+                                                onClick={() => setIsOpen(false)}
+                                            >
+                                                {link.name}
+                                            </Link>
+                                        ))}
+                                    </div>
+
+                                    {/* Mobile CTA Button */}
+                                    <div className="py-4 w-full flex justify-center">
+                                        <Button className="btn btn-primary flex items-center gap-3">
+                                            <img src="/icon/chat.svg" alt=""/>
+                                            New Chat
+                                        </Button>
+                                    </div>
+                                </div>
+                            </SheetContent>
+                        </Sheet>
+                    </div>
                 </div>
             </div>
         </nav>
-        </>
     )
 }

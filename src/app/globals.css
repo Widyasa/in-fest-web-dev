@@ -129,7 +129,7 @@
     font-family: var(--font-gloock);
   }
   .btn {
-    @apply px-5 py-3
+    @apply px-5 py-3 duration-200
   }
   .btn-primary{
     @apply text-white duration-200 hover:brightness-110;
@@ -141,7 +141,7 @@
     @apply mt-[120px]
   }
   .nav-link{
-    @apply text-font/[62%] duration-200 hover:text-main;
+    @apply text-font/[62%] duration-200 hover:text-main text-sm;
   }
   .nav-link.active{
     @apply text-main;

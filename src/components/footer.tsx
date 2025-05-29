@@ -1,13 +1,13 @@
 import { Facebook, Twitter, Instagram, Youtube, Mail } from "lucide-react"
-import PrimaryButton from "@/src/components/ui/primary-button";
 import Link from "next/link";
+import PrimaryButton from "@/components/ui/primary-button";
 
 export default function FooterSection() {
     return (
         <footer className="bg-[#F1F8FF] py-10 px-4 section-margin-top">
             <div className="max-w-6xl mx-auto">
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-center mb-12 pb-8 border-b border-gray-200">
+                <div className="flex flex-col md:flex-row justify-between md:items-center mb-12 pb-8 border-b border-gray-200">
                     <h2 className="title-font section-title mb-4 md:mb-0">
                         Tetap <span className="text-blue-500">Terhubung</span> Dengan Kami
                     </h2>

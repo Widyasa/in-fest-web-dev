@@ -25,7 +25,7 @@ export default function RootLayout({children,}: Readonly<{
     return (
         <html lang="en">
         <body
-            className={`${gloock.variable} ${poppins.variable} antialiased`}
+            className={`${gloock.variable} ${poppins.variable} antialiased overflow-x-hidden`}
         >
         {children}
         </body>

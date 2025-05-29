@@ -1,5 +1,5 @@
 import Image from "next/image";
-import PrimaryButton from "@/src/components/ui/primary-button";
+import PrimaryButton from "@/components/ui/primary-button";
 
 export default function HeroSection() {
     return(
