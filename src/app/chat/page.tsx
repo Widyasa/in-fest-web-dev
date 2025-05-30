@@ -1,256 +1,321 @@
+// app/chat/page.tsx (atau pages/chat.tsx)
 'use client'
-import {Button} from "@/src/components/ui/button";
-import {GoogleGenAI} from "@google/genai";
-import {useState, useEffect} from "react";
-import {createClientComponentClient} from '@supabase/auth-helpers-nextjs';
-import {Textarea} from "@/src/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import ReactMarkdown from "react-markdown";
+import { GoogleGenAI } from "@google/genai";
+import { useState, useEffect, useRef, useCallback } from "react"; // Import useCallback
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
+import ProductCard from "@/components/product-card";
+
+interface Product {
+    id: number;
+    name: string;
+    ingredients: string[];
+    price: number;
+    features: string[];
+    img_link: string | null;
+    shop_link: string | null;
+    created_at: string;
+    category: string;
+    description?: string | null;
+}
+
+interface ChatMessage {
+    role: 'user' | 'ai';
+    text: string;
+    recommendedProductIds?: number[];
+}
+
+const supabase = createClientComponentClient();
+
+// Definisi instruksi sistem di luar komponen agar tidak dibuat ulang terus-menerus
+const SYSTEM_INSTRUCTION: string = `Anda adalah seorang ahli kecantikan dan skincare profesional dengan pengalaman luas dalam menangani berbagai jenis kulit dan masalah kulit. Saya akan memberikan pertanyaan atau keluhan seputar kondisi kulit saya, dan Anda akan memberikan jawaban **dalam Bahasa Indonesia** yang informatif, terpercaya, dan mudah dipahami.
+
+Tugas Anda:
+1. Identifikasi jenis dan masalah kulit berdasarkan deskripsi saya.
+2. Berikan penjelasan ringkas namun jelas mengenai penyebab dan solusi yang dapat dilakukan untuk mengatasi masalah tersebut.
+3. **Berikan rekomendasi ingredient utama yang paling dibutuhkan beserta alasannya (Mengapa?) dan cara penggunaan (Gunakan:).**
+4. Jika relevan, sertakan contoh RUTINITAS (Pagi/Malam) berdasarkan ingredients yang direkomendasikan.
+5. **Rekomendasikan produk dari Daftar Produk (format JSON) di bawah yang paling sesuai dengan kebutuhan pengguna. Saat mengevaluasi produk, perhatikan baik kolom 'ingredients' maupun 'features' (yang mungkin merupakan array string di dalam JSON).** Pastikan produk yang direkomendasikan memiliki ingredients dan kategori yang relevan.
+6. Jika saya meminta produk berdasarkan ingredient tertentu (contoh: "produk yang mengandung niacinamide"), berikan produk yang cocok dari daftar.
+7. Di akhir respons, berikan daftar ID produk yang direkomendasikan dalam format: **Produk Cocok (ID): [ID1], [ID2], [ID3]**. Jika tidak ada produk yang sesuai, tulis: **Produk Cocok (ID): Tidak ada**.
+8. **PENTING: Selalu tambahkan disclaimer di akhir respons bahwa informasi ini adalah saran umum dan bukan pengganti konsultasi dengan dermatologis profesional.**
+9. Jika pertanyaan tidak relevan dengan topik skincare atau kecantikan kulit, beri respons sopan bahwa Anda tidak bisa membantu dalam hal tersebut.
+
+Format respons yang sangat diharapkan dari Anda (ikuti format ini untuk setiap bagian):
+[Penjelasan singkat mengenai masalah atau permintaan pengguna, disertai solusi dan mengapa terjadi]
+🌟 Ingredient yang Paling Kamu Butuhkan dan Alasannya
+1. [Ingredient 1] – [Konsentrasi/Jenis jika relevan]
+   Mengapa?: [Alasan manfaat]
+   Gunakan: [Cara penggunaan]
+2. [Ingredient 2] – ...
+   Mengapa?: ...
+   Gunakan: ...
+...
+✅ Rekomendasi Produk Sesuai Kebutuhanmu
+🔹 [Kategori Produk]
+   [Nama Produk 1 dari daftar produk]
+   [Nama Produk 2 dari daftar produk]
+...
+🗓️ Contoh Basic Routine (Bisa Disesuaikan)
+🌞 Pagi:
+   [Langkah 1]
+   [Langkah 2]
+...
+🌙 Malam:
+   [Langkah 1]
+   [Langkah 2]
+...
+📝 Tips Tambahan
+   [Tips 1]
+   [Tips 2]
+...
+Produk Cocok (ID): [ID Produk 1], [ID Produk 2], ...
+[Disclaimer medis]
+`;
 
 export default function Chat() {
-    const [aiResponseText, setAiResponseText] = useState("");
-    const [products, setProducts] = useState([]);
-    const [userProblem, setUserProblem] = useState("");
-    const [recommendedProducts, setRecommendedProducts] = useState([]);
-    const [isThinking, setIsThinking] = useState(false);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [userProblem, setUserProblem] = useState<string>("");
+    const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
+    const [isThinking, setIsThinking] = useState<boolean>(false);
+    const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
-    const ai = new GoogleGenAI({apiKey: process.env.NEXT_PUBLIC_AI_API_KEY});
-    const supabase = createClientComponentClient();
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    async function getProducts() {
+    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_AI_API_KEY });
+
+    const scrollToBottom = useCallback(() => { // Gunakan useCallback
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, []);
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [chatHistory, isThinking, scrollToBottom]); // Tambahkan scrollToBottom ke dependencies
+
+    const getProducts = useCallback(async (): Promise<void> => { // Gunakan useCallback
         try {
-            const {data, error} = await supabase
+            const { data, error } = await supabase
                 .from('products')
                 .select('*');
 
-            if (error) throw error;
-            setProducts(data);
-            console.log("Fetched products:", data);
+            if (error) {
+                throw error;
+            }
+
+            const typedProducts: Product[] = data.map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                category: item.category,
+                img_link: item.img_link,
+                shop_link: item.shop_link,
+                created_at: item.created_at,
+                description: item.description,
+                ingredients: typeof item.ingredients === 'string' ? JSON.parse(item.ingredients) : item.ingredients,
+                features: typeof item.features === 'string' ? JSON.parse(item.features) : item.features,
+            }));
+
+            setProducts(typedProducts);
+            console.log("Fetched products:", typedProducts);
         } catch (error) {
-            console.error('Error fetching products:', error);
+            console.error('Error fetching products:', error instanceof Error ? error.message : error);
         }
-    }
+    }, []); // Dependencies kosong karena hanya perlu dijalankan sekali
 
     useEffect(() => {
         getProducts();
-    }, []);
+    }, [getProducts]); // Panggil getProducts
 
-    async function getSkincareRecommendations() {
-        if (!userProblem) {
-            setAiResponseText("Mohon masukkan masalah kulit Anda terlebih dahulu.");
+    const getSkincareRecommendations = useCallback(async (): Promise<void> => { // Gunakan useCallback
+        if (!userProblem.trim()) {
+            setChatHistory(prev => [...prev, { role: 'ai', text: "Mohon masukkan masalah kulit Anda terlebih dahulu." }]);
             return;
         }
 
         setIsThinking(true);
-        setAiResponseText("Menganalisis masalah kulit Anda dan mencari rekomendasi bahan aktif...");
-        setRecommendedProducts([]); // Kosongkan rekomendasi sebelumnya
+        const currentUserMessage: ChatMessage = { role: 'user', text: userProblem };
+        setChatHistory(prev => [...prev, currentUserMessage]);
+        setUserProblem("");
 
-        // Data produk untuk AI (tetap sama, karena AI masih perlu 'melihat' data ini)
+        setRecommendedProducts([]);
+
+        // Data produk untuk AI
         const productDataForAI = products.map(product => ({
             id: product.id,
             name: product.name,
             price: product.price,
             category: product.category,
-            ingredients: product.ingredients_idn || product.ingredients_en,
-            features: product.features_idn || product.features_en,
+            ingredients: JSON.stringify(product.ingredients),
+            features: JSON.stringify(product.features),
+            img_link: product.img_link,
+            shop_link: product.shop_link,
+            description: product.description,
         }));
         const productJsonString = JSON.stringify(productDataForAI, null, 2);
 
-        // --- Perubahan Penting di Sini: Prompt yang Diperbarui ---
-        const prompt = `Anda adalah seorang ahli skincare profesional dan berpengalaman. Saya akan memberikan masalah kulit yang saya hadapi, dan Anda akan memberikan respons dalam Bahasa Indonesia.
+        // --- PEMBARUAN KRUSIAL UNTUK MEMORI CHAT ---
+        // Kita akan mengirim seluruh history sebagai `contents`, dan instruksi serta data produk
+        // akan disematkan di awal prompt dari pesan pengguna pertama.
+        // Jika ini bukan pesan pertama, hanya kirim riwayat dan pesan pengguna baru.
 
-        Tugas Anda:
-        1.  Identifikasi masalah kulit dari prompt saya.
-        2.  Berikan solusi dan penjelasan singkat mengenai masalah tersebut.
-        3.  Rekomendasikan minimal 3 **bahan aktif (ingredients)** skincare yang paling cocok untuk mengatasi masalah tersebut. Sebutkan nama bahan aktifnya dan juga manfaat dari bahan aktif tersebut, pisahkan dengan koma (contoh: Salicylic Acid: berguna untuk ..., Niacinamide: berguna untuk..., Hyaluronic Acid: berguna untuk...).
-        4.  Berdasarkan daftar produk di bawah ini, **tentukan produk mana yang paling cocok berdasarkan kecocokan bahan aktif dan juga kategori produk jika disebutkan dalam prompt** (contoh: jika user menyebut ingin rekomendasi 'tabir surya', maka pilih hanya produk dengan kategori 'tabir surya' yang cocok dengan masalah kulitnya).
-        5.  Di akhir respons, berikan daftar ID produk yang cocok ini dalam format berikut: "Produk Cocok (ID): [ID1], [ID2], [ID3]". Hanya berikan ID produk yang ada dalam daftar. Jika tidak ada produk yang cocok, berikan "Produk Cocok (ID): Tidak ada".
-        6.  Jika topik pertanyaan melenceng dari masalah kulit atau skincare, berikan jawaban bahwa Anda tidak dapat memberikan solusi.
-        
-        --- Daftar Produk (format JSON) ---
-        ${productJsonString}
-        --- Akhir Daftar Produk ---
-        
-        Masalah kulit saya: ${userProblem}
-        
-        **Contoh format respons yang diharapkan dari Anda:**
-        Masalah Kulit: [Masalah Kulit Anda]
-        Solusi: [Penjelasan Singkat Solusi]
-        Bahan Aktif: [Bahan Aktif 1], [Bahan Aktif 2], [Bahan Aktif 3]
-        Manfaatnya: [Manfaat Bahan Aktif 1], [Manfaat Bahan Aktif 2], [Manfaat Bahan Aktif 3]
-        Produk Cocok (ID): [ID Produk 1], [ID Produk 2], [ID Produk 3]
-        `;
+        const aiHistoryFormatted = chatHistory.map(msg => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.text }]
+        }));
 
+        let currentPromptText: string;
+        // Jika ini adalah pesan pertama, tambahkan instruksi sistem dan daftar produk
+        if (chatHistory.length === 0) { // Atau bisa juga `aiHistoryFormatted.length === 0`
+            currentPromptText = `
+${SYSTEM_INSTRUCTION}
+
+--- Daftar Produk (format JSON) ---
+${productJsonString}
+--- Akhir Daftar Produk ---
+
+Masalah atau permintaan saya: ${currentUserMessage.text}
+            `;
+        } else {
+            // Jika bukan pesan pertama, cukup kirim pertanyaan pengguna saat ini
+            currentPromptText = currentUserMessage.text;
+        }
+
+        const contents = [
+            ...aiHistoryFormatted,
+            { role: "user", parts: [{ text: currentPromptText }] }
+        ];
 
         try {
             const response = await ai.models.generateContent({
                 model: "gemma-3n-e4b-it",
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                contents: contents,
             });
 
-            const aiRawText = response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts && response.candidates[0].content.parts[0] && response.candidates[0].content.parts[0].text
+            const aiRawText: string = response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts && response.candidates[0].content.parts[0] && response.candidates[0].content.parts[0].text
                 ? response.candidates[0].content.parts[0].text
                 : "Tidak ada respons teks yang valid dari AI.";
-            // setAiResponseText(aiRawText); // Jangan set langsung, kita akan memecahnya
-            console.log("AI Raw Response:", aiRawText);
 
-            let recommendedIngredients = [];
-            let recommendedProductIds = [];
+            let recommendedProductIds: number[] = [];
 
-            // --- Logika Ekstraksi ID Produk dan Pemisahan Teks Respons ---
             const productIdExtractRegex = /Produk Cocok \(ID\):\s*(.*?)(?:\n|$)/i;
             const matchProductIds = aiRawText.match(productIdExtractRegex);
 
-            let cleanAiResponse = aiRawText; // Teks AI tanpa bagian rekomendasi ID
+            let cleanAiResponse = aiRawText;
 
             if (matchProductIds && matchProductIds[1]) {
                 const idsString = matchProductIds[1].trim();
                 if (idsString.toLowerCase() !== "tidak ada") {
                     recommendedProductIds = idsString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
                 }
-                // Hapus bagian "Produk Cocok (ID): ..." dari teks respons utama
                 cleanAiResponse = aiRawText.replace(productIdExtractRegex, '').trim();
             }
-            setAiResponseText(cleanAiResponse); // Set teks respons yang sudah bersih
 
-            // Ekstraksi Bahan Aktif (tetap sama)
-            const ingredientListRegex = /(?:Bahan Aktif):\s*(.*?)(?:\n|$)/i;
-            let matchIngredients = cleanAiResponse.match(ingredientListRegex); // Gunakan cleanAiResponse
+            const newAiMessage: ChatMessage = {
+                role: 'ai',
+                text: cleanAiResponse,
+                recommendedProductIds: recommendedProductIds.length > 0 ? recommendedProductIds : undefined
+            };
+            setChatHistory(prev => [...prev, newAiMessage]);
 
-            if (matchIngredients && matchIngredients[1]) {
-                recommendedIngredients = matchIngredients[1].split(',').map(item => item.trim().toLowerCase());
-            } else {
-                const keywords = [
-                    'salicylic acid', 'hyaluronic acid', 'niacinamide', 'retinol',
-                    'vitamin c', 'tea tree oil', 'ceramides', 'glycolic acid',
-                    'lactic acid', 'azelaic acid', 'panthenol', 'squalane',
-                    'peptide', 'zinc', 'green tea', 'aloe vera', 'centella asiatica'
-                ];
-                recommendedIngredients = keywords.filter(keyword => cleanAiResponse.toLowerCase().includes(keyword));
-            }
-            console.log("Extracted Recommended Ingredients:", recommendedIngredients);
-            console.log("Extracted Recommended Product IDs from AI:", recommendedProductIds);
-
-            // Filter produk berdasarkan ID yang direkomendasikan oleh AI (Prioritas Utama)
             if (products.length > 0 && recommendedProductIds.length > 0) {
                 const filteredById = products.filter(product => recommendedProductIds.includes(product.id));
                 setRecommendedProducts(filteredById);
-                console.log("Filtered Products by AI's Recommended IDs:", filteredById);
-            }
-                // Fallback: Jika AI tidak memberikan ID produk atau ID tidak valid,
-            // kita bisa filter berdasarkan bahan aktif seperti sebelumnya.
-            else if (products.length > 0 && recommendedIngredients.length > 0) {
-                const filteredByIngredient = products.filter(product => {
-                    let productIngredientsText = '';
-
-                    const getParsedIngredientsText = (ingredientsData) => {
-                        if (ingredientsData) {
-                            try {
-                                const parsed = typeof ingredientsData === 'string' ? JSON.parse(ingredientsData) : ingredientsData;
-                                if (Array.isArray(parsed)) {
-                                    return parsed.join(', ');
-                                }
-                            } catch (e) {
-                                console.warn("Error parsing ingredients (treating as string):", e, ingredientsData);
-                            }
-                        }
-                        return String(ingredientsData || '');
-                    };
-
-                    productIngredientsText = getParsedIngredientsText(product.ingredients_idn) || getParsedIngredientsText(product.ingredients_en);
-
-                    if (!productIngredientsText) {
-                        return false;
-                    }
-
-                    const productIngredientsLower = productIngredientsText.toLowerCase();
-                    return recommendedIngredients.some(ing => productIngredientsLower.includes(ing));
-                });
-                setRecommendedProducts(filteredByIngredient);
-                console.log("Filtered Products by Ingredients (fallback):", filteredByIngredient);
             } else {
-                console.warn("Tidak ada produk untuk difilter atau tidak ada bahan/ID spesifik yang diekstrak dari respons AI.");
                 setRecommendedProducts([]);
             }
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Terjadi kesalahan saat membuat konten atau memproses respons AI:", error);
-            setAiResponseText("Terjadi kesalahan saat mendapatkan rekomendasi. Mohon coba lagi.");
+            const errorMessage = `Terjadi kesalahan saat mendapatkan rekomendasi: ${error.message || "Mohon coba lagi."}`;
+            setChatHistory(prev => [...prev, { role: 'ai', text: errorMessage }]);
             setRecommendedProducts([]);
         } finally {
             setIsThinking(false);
         }
-    }
+    }, [products, userProblem, chatHistory, scrollToBottom]); // Tambahkan dependencies
 
+    // ... (rest of the component remains largely the same for rendering)
     return (
-        <div className="flex flex-col gap-4 justify-center items-center p-4">
-            <h1 className="text-2xl font-bold mb-4">Ahli Skincare AI</h1>
-            <Textarea
-                placeholder="Ceritakan masalah kulit Anda di sini (misalnya: 'Saya punya jerawat di dahi dan kulit saya berminyak', atau 'Kulit saya kering dan kusam, saya butuh pelembap')."
-                className="max-w-2xl w-full h-32"
-                value={userProblem}
-                onChange={(e) => setUserProblem(e.target.value)}
-            />
-            <Button
-                onClick={getSkincareRecommendations}
-                className="w-fit"
-                disabled={isThinking}
-            >
-                {isThinking ? '🤔 AI sedang berpikir...' : 'Dapatkan Rekomendasi'}
-            </Button>
+        <div className="flex flex-col h-screen bg-gray-100">
+            <div className="w-full bg-white shadow-md p-4 flex justify-center items-center">
+                <h1 className="text-2xl font-bold text-gray-800">Ahli Skincare AI</h1>
+            </div>
 
-            {/* Tampilkan respons AI utama */}
-            {aiResponseText && (
-                <div className="mt-4 w-full max-w-2xl p-4 border rounded-lg bg-gray-50">
-                    <h2 className="font-bold text-lg mb-2">Respons AI:</h2>
-                    <p className="whitespace-pre-wrap text-justify">{aiResponseText}</p>
-                </div>
-            )}
-
-            {/* Tampilkan produk yang direkomendasikan dari database */}
-            {recommendedProducts.length > 0 && (
-                <div className="mt-8 w-full max-w-2xl">
-                    <h2 className="text-xl font-semibold mb-4">Produk dari Database yang Mungkin Cocok:</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {recommendedProducts.map((product) => (
-                            <div key={product.id} className="border p-4 rounded-lg shadow-sm bg-white">
-                                <h3 className="font-bold text-lg">{product.name}</h3>
-                                <p className="text-md font-semibold text-green-700">
-                                    Harga: Rp{product.price?.toLocaleString('id-ID')}
-                                </p>
-                                {product.ingredients_idn && (
-                                    <p className="text-sm mt-2">
-                                        **Kandungan Utama:** {typeof product.ingredients_idn === 'string' ? product.ingredients_idn : (Array.isArray(product.ingredients_idn) ? product.ingredients_idn.join(', ') : (product.ingredients_en || ''))}
-                                    </p>
-                                )}
-                                {!product.ingredients_idn && product.ingredients_en && (
-                                    <p className="text-sm mt-2">
-                                        **Kandungan Utama:** {typeof product.ingredients_en === 'string' ? product.ingredients_en : (Array.isArray(product.ingredients_en) ? product.ingredients_en.join(', ') : '')}
-                                    </p>
-                                )}
-
-                                {product.features_idn && (
-                                    <p className="text-sm">
-                                        **Fitur Utama:** {typeof product.features_idn === 'string' ? product.features_idn : (Array.isArray(product.features_idn) ? product.features_idn.join(', ') : (product.features_en || ''))}
-                                    </p>
-                                )}
-                                {!product.features_idn && product.features_en && (
-                                    <p className="text-sm">
-                                        **Fitur Utama:** {typeof product.features_en === 'string' ? product.features_en : (Array.isArray(product.features_en) ? product.features_en.join(', ') : '')}
-                                    </p>
-                                )}
-
-                                {product.description && <p className="text-sm mt-2 text-gray-700">{product.description}</p>}
-                            </div>
-                        ))}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-2xl mx-auto w-full">
+                {chatHistory.length === 0 && (
+                    <div className="flex justify-center items-center h-full text-gray-500 text-center px-4">
+                        Selamat datang di Chatbot Perawatan Wajah! Ceritakan masalah kulit Anda dan saya akan bantu dengan kiat, rekomendasi produk, dan info ingredient.
                     </div>
-                </div>
-            )}
-            {recommendedProducts.length === 0 && aiResponseText && !isThinking &&
-                !aiResponseText.includes("Terjadi kesalahan") &&
-                !aiResponseText.includes("Menganalisis masalah kulit Anda") && (
-                    <p className="mt-4 text-gray-600">
-                        Tidak ada produk yang cocok ditemukan dari database berdasarkan rekomendasi AI atau AI tidak dapat merekomendasikan ID produk spesifik.
-                    </p>
                 )}
+                {chatHistory.map((message, index) => (
+                    <div key={index}>
+                        {message.role === 'user' ? (
+                            <div className="flex justify-end">
+                                <div className="bg-blue-600 text-white p-3 rounded-t-xl rounded-bl-xl shadow max-w-[75%]">
+                                    <ReactMarkdown>{message.text}</ReactMarkdown>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-start">
+                                <div className="bg-white p-3 rounded-t-xl rounded-br-xl shadow max-w-[75%] text-gray-800">
+                                    <ReactMarkdown>{message.text}</ReactMarkdown>
+                                </div>
+                                {message.recommendedProductIds && message.recommendedProductIds.length > 0 && (
+                                    <div className="mt-4 w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {products.filter(p => message.recommendedProductIds?.includes(p.id)).map(product => (
+                                            <ProductCard key={product.id} product={product} />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                ))}
+                {isThinking && (
+                    <div className="flex justify-start">
+                        <div className="bg-gray-200 text-gray-700 p-3 rounded-t-xl rounded-br-xl shadow animate-pulse">
+                            AI sedang mengetik...
+                        </div>
+                    </div>
+                )}
+                <div ref={messagesEndRef} />
+            </div>
+
+            <div className="w-full bg-white p-4 shadow-md flex justify-center sticky bottom-0 z-10">
+                <div className="max-w-2xl w-full flex items-center gap-2">
+                    <Textarea
+                        placeholder="Ketik pesan Anda..."
+                        className="flex-1 h-12 resize-none p-3 border rounded-full focus:ring-blue-500 focus:border-blue-500 pr-10"
+                        value={userProblem}
+                        onChange={(e) => setUserProblem(e.target.value)}
+                        onKeyPress={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                getSkincareRecommendations();
+                            }
+                        }}
+                    />
+                    <Button
+                        onClick={getSkincareRecommendations}
+                        className="p-2 w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white"
+                        disabled={isThinking || !userProblem.trim()}
+                    >
+                        {isThinking ? (
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                            </svg>
+                        )}
+                    </Button>
+                </div>
+            </div>
         </div>
     );
 }
