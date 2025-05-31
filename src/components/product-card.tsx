@@ -1,8 +1,7 @@
 // components/ProductCard.tsx
 import React from 'react';
-import Link from 'next/link'; // Untuk navigasi di Next.js
+import Link from 'next/link';
 
-// Tipe yang sama dengan Product di atas
 interface Product {
     id: number;
     name: string;
@@ -14,6 +13,8 @@ interface Product {
     created_at: string;
     category: string;
     description?: string | null;
+    // rating?: number; // Hapus atau jadikan opsional jika ada
+    // reviews?: number; // Hapus atau jadikan opsional jika ada
 }
 
 interface ProductCardProps {
@@ -22,11 +23,10 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     return (
-        // Link wrapper agar seluruh card bisa di-klik
-        <Link href={`/products/${product.id}`} passHref>
+        <Link href={`/home/product/${product.id}`} passHref>
             <div className="block cursor-pointer border p-4 rounded-lg shadow-sm bg-white hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
                 {product.img_link && (
-                    <div className="w-full h-48 mb-4 overflow-hidden rounded-md flex items-center justify-center bg-gray-100">
+                    <div className="w-full h-48 mb-4 overflow-hidden rounded-md flex items-center justify-center">
                         <img
                             src={product.img_link}
                             alt={product.name}
@@ -34,24 +34,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                         />
                     </div>
                 )}
-                <h3 className="font-bold text-lg mb-2 text-gray-900">{product.name}</h3>
-                <p className="text-md font-semibold text-green-700 mb-2">
-                    Harga: Rp{product.price?.toLocaleString('id-ID')}
-                </p>
+                <h3 className="font-semibold mb-2 line-clamp-1 ">{product.name}</h3>
+                <p className={"desc"}>{product.category} | Rp{product.price?.toLocaleString('id-ID')}</p>
 
-                {product.ingredients && product.ingredients.length > 0 && (
-                    <p className="text-sm text-gray-700 mb-1">
-                        **Kandungan Utama:** {product.ingredients.slice(0, 2).join(', ')}{product.ingredients.length > 2 ? '...' : ''}
-                    </p>
-                )}
+                {/* Hapus bagian rating bintang ini jika ada */}
+                {/* {product.rating && product.reviews && (
+                    <div className="flex items-center text-sm text-gray-600 mb-2">
+                        <span className="text-yellow-500 mr-1">&#9733;</span> {product.rating} ({product.reviews})
+                    </div>
+                )} */}
 
-                {product.features && product.features.length > 0 && (
-                    <p className="text-sm text-gray-700 mb-1">
-                        **Fitur:** {product.features.slice(0, 2).join(', ')}{product.features.length > 2 ? '...' : ''}
-                    </p>
-                )}
-
-                {/* Deskripsi singkat jika ada, dipotong agar tidak terlalu panjang di card */}
                 {product.description && (
                     <p className="text-xs text-gray-500 mt-2 line-clamp-2">
                         {product.description}
