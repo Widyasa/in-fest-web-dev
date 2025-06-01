@@ -29,7 +29,7 @@ export default function HeroSection() {
                                             </p>
                                         </div>
                                         <div className="mt-8 flex justify-center">
-                                            <Link href={'/chat'}> {/* Ganti #chat dengan /chat */}
+                                            <Link href={'#chat'}> {/* Ganti #chat dengan /chat */}
                                                 <PrimaryButton label={"Get Started"} />
                                             </Link>
                                         </div>

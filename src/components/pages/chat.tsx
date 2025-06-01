@@ -1,13 +1,13 @@
 'use client'
 import {createClientComponentClient} from "@supabase/auth-helpers-nextjs";
 import {useCallback, useEffect, useRef, useState} from "react";
-import {GoogleGenAI} from "@google/genai";
 import {CircleCheck, Droplet, Package, Search, ShieldCheck, Sparkles} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import {Textarea} from "@/components/ui/textarea";
 import {Button} from "@/components/ui/button";
 import useChatStore from "@/stores/chatStore";
-import ProductCard from "../product-card";
+import {GoogleGenAI} from "@google/genai";
+import ProductCard from "@/components/product-card";
 
 interface Product {
     id: number;
@@ -30,14 +30,19 @@ interface ChatMessage {
 
 const supabase = createClientComponentClient();
 
-// --- PERBAIKAN PADA SYSTEM_INSTRUCTION ---
 const SYSTEM_INSTRUCTION: string = `Anda adalah seorang ahli kecantikan dan skincare profesional dengan pengalaman luas dalam menangani berbagai jenis kulit dan masalah kulit. Saya akan memberikan pertanyaan atau keluhan seputar kondisi kulit saya, dan Anda akan memberikan jawaban **dalam Bahasa Indonesia** yang informatif, terpercaya, dan mudah dipahami.
 
-**Gunakan format Markdown untuk membuat respons Anda lebih menarik dan mudah dibaca.** Sertakan:
-* **Heading (##, ###)** untuk judul bagian dan sub-bagian.
-* **Bold (**tebal**)** untuk penekanan pada kata kunci penting (misalnya nama ingredient, jenis kulit).
-* **List (* atau -)** untuk daftar kiat, manfaat, atau produk.
-* **Blockquotes (>)** untuk menyoroti tips penting atau ringkasan.
+## 1. 🔒 **Topik Di Luar Skincare = Tolak**
+Jika pengguna memberikan pertanyaan yang **tidak berkaitan** dengan:
+- Masalah kulit (berminyak, berjerawat, sensitif, kering, kusam, dll)
+- Produk perawatan kulit (cleanser, toner, serum, sunscreen, dll)
+- Kecantikan (perawatan wajah, ingredient skincare, dsb)
+
+Maka AI harus menolak secara sopan. Contoh:
+> **"Maaf, saya hanya dapat membantu dengan pertanyaan seputar perawatan kulit dan kecantikan. Silakan ajukan pertanyaan yang relevan."**
+
+**JANGAN** mencoba menjawab topik seperti teknologi, makanan, karir, hubungan, finansial, kesehatan secara umum atau lainnya.
+
 
 Tugas Anda:
 1.  Identifikasi jenis dan masalah kulit berdasarkan deskripsi saya.
@@ -46,7 +51,7 @@ Tugas Anda:
 4.  Jika relevan, sertakan contoh RUTINITAS (Pagi/Malam) berdasarkan ingredients yang direkomendasikan. Gunakan sub-heading (###) untuk 'Pagi' dan 'Malam'.
 5.  **SANGAT PENTING DAN PRIORITAS UTAMA: Hanya rekomendasikan produk yang persis ADA di dalam "Daftar Produk (format JSON)" yang diberikan. Jangan PERNAH mengarang nama produk atau merek lain yang tidak ada di daftar. Gunakan nama produk dan ID produk yang persis dan sesuai dari daftar.** Jika Anda merekomendasikan sebuah produk berdasarkan namanya, pastikan ID produk tersebut benar-benar adalah ID dari produk dengan nama tersebut di Daftar Produk. Jika tidak ada produk yang cocok di database, nyatakan dengan jelas bahwa tidak ada produk yang cocok dari database dan JANGAN merekomendasikan apapun. Saat mengevaluasi produk, perhatikan baik kolom 'ingredients' maupun 'features' (yang mungkin merupakan array string di dalam JSON). Gunakan daftar bullet point untuk setiap produk.
 6.  Jika saya meminta produk berdasarkan ingredient tertentu (contoh: "produk yang mengandung niacinamide"), **hanya berikan produk yang cocok dari daftar yang tersedia, tanpa menampilkan JSON produk secara langsung di respons Anda.**
-7.  Di akhir respons, berikan daftar ID produk yang direkomendasikan dalam format: **Produk Cocok (ID): [ID1], [ID2], [ID3]**. Jika tidak ada produk yang sesuai dari database, tulis: **Produk Cocok (ID): Tidak ada**.
+7.  **SELALU DI AKHIR RESPON, berikan daftar ID produk yang direkomendasikan dalam format: Produk Cocok (ID): [ID1], [ID2], [ID3], [ID4], dll. Jika tidak ada produk yang sesuai dari database, tulis: Produk Cocok (ID): Tidak ada.**
 8.  **PENTING: Selalu tambahkan disclaimer di akhir respons bahwa informasi ini adalah saran umum dan bukan pengganti konsultasi dengan dermatologis profesional.** Gunakan blockquote untuk disclaimer ini.
 9.  **PRIORITAS TERTINGGI: Jika pertanyaan tidak jelas, tidak relevan, acak, atau tidak dapat diidentifikasi sebagai pertanyaan tentang skincare atau kecantikan kulit, JANGAN coba menjawab atau menebak. Beri respons singkat dan sopan bahwa Anda tidak bisa membantu dalam hal tersebut dan minta pengguna untuk mengajukan pertanyaan yang relevan. Contoh respons: "Maaf, saya hanya dapat membantu dengan pertanyaan seputar perawatan kulit dan kecantikan. Bisakah Anda mengajukan pertanyaan yang relevan?"**
 
@@ -80,19 +85,19 @@ Format respons yang sangat diharapkan dari Anda: Sajikan informasi dalam format 
 * [Tips 1]
 * [Tips 2]
 ...
-===
+---
 --- Daftar Produk (format JSON) ---
 
 > [Disclaimer medis]
 `;
-// ... (rest of the Chat component code)
 
 export default function Chat() {
     const [products, setProducts] = useState<Product[]>([]);
     const [userProblem, setUserProblem] = useState<string>("");
     const [isThinking, setIsThinking] = useState<boolean>(false);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-    const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
+    // `recommendedProducts` tidak lagi digunakan, jadi bisa dihapus sepenuhnya
+    // const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const initialChatProcessed = useRef(false);
@@ -100,7 +105,7 @@ export default function Chat() {
     const initialPrompt = useChatStore((state) => state.initialPrompt);
     const clearInitialPrompt = useChatStore((state) => state.clearInitialPrompt);
 
-    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_AI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_AI_API_KEY || '' });
 
     const suggestedPrompts = [
         {
@@ -158,32 +163,34 @@ export default function Chat() {
             }));
 
             setProducts(typedProducts);
-            console.log("Fetched products:", typedProducts);
+            console.log("Fetched products successfully. Total:", typedProducts.length); // LOG BARU
         } catch (error) {
             console.error('Error fetching products:', error instanceof Error ? error.message : error);
             setProducts([]);
         }
     }, []);
 
-
-    const handleInitialChat = useCallback(async (initialQuestion: string, currentProducts: Product[]): Promise<void> => {
-        if (initialChatProcessed.current || isThinking || !initialQuestion) {
-            console.log("handleInitialChat skipped: already processed, thinking, or no initial question", { initialChatProcessed: initialChatProcessed.current, isThinking, initialQuestion });
+    const fetchAiRecommendations = useCallback(async (prompt: string, isInitialChat: boolean = false): Promise<void> => {
+        if (!prompt.trim() || isThinking) {
+            if (isInitialChat && !prompt.trim()) {
+                console.log("Initial chat skipped: no initial question.");
+                return;
+            }
+            if (!isThinking && !prompt.trim()) {
+                setChatHistory(prev => [...prev, { role: 'ai', text: "Mohon masukkan masalah kulit Anda terlebih dahulu." }]);
+            }
             return;
         }
-        initialChatProcessed.current = true;
 
         setIsThinking(true);
-        const initialUserMessage: ChatMessage = { role: 'user', text: initialQuestion };
-        setChatHistory([initialUserMessage]);
+        // `userProblem` sudah di-reset di fungsi pemanggil (getSkincareRecommendations, handleSuggestedPromptClick)
+        // atau dikosongkan di `handleInitialChat` jika `userProblem` sama dengan prompt.
 
-        const productDataForAI = currentProducts.map(product => ({
+        const productDataForAI = products.map(product => ({
             id: product.id,
             name: product.name,
             price: product.price,
             category: product.category,
-            // Penting: Kirim ingredients dan features sebagai string JSON untuk AI
-            // agar AI bisa "membaca" data ini.
             ingredients: JSON.stringify(product.ingredients),
             features: JSON.stringify(product.features),
             img_link: product.img_link,
@@ -192,74 +199,116 @@ export default function Chat() {
         }));
         const productJsonString = JSON.stringify(productDataForAI, null, 2);
 
-        const initialPromptContent = `${SYSTEM_INSTRUCTION}\n\n--- Daftar Produk (format JSON) ---\n${productJsonString}\n--- Akhir Daftar Produk ---\n\nMasalah atau permintaan saya: ${initialQuestion}`;
+        // Bangun riwayat chat lengkap untuk dikirim ke Gemini API
+        const contentsToSend: Array<{ role: 'user' | 'model', parts: Array<{ text: string }> }> = [];
+
+        // Selalu tambahkan SYSTEM_INSTRUCTION di awal percakapan yang dikirim ke AI
+        contentsToSend.push({
+            role: "user",
+            parts: [{ text: SYSTEM_INSTRUCTION }]
+        });
+
+        // Tambahkan riwayat chat sebelumnya (dari state React)
+        // Penting: Pastikan chatHistory yang digunakan di sini adalah state saat fungsi ini dipanggil.
+        // Jika ada penambahan baru ke chatHistory sebelum ini yang tidak di-render ulang,
+        // maka chatHistory di sini mungkin belum mencerminkan perubahan terakhir.
+        // Namun, useCallback dengan chatHistory sebagai dependensi akan membantu.
+        for (const message of chatHistory) {
+            contentsToSend.push({
+                role: message.role === 'user' ? 'user' : 'model',
+                parts: [{ text: message.text || '' }]
+            });
+        }
+
+        // Tambahkan prompt pengguna saat ini dan data produk ke bagian akhir riwayat yang akan dikirim
+        contentsToSend.push({
+            role: "user",
+            parts: [{ text: `--- Daftar Produk (format JSON) ---\n${productJsonString}\n--- Akhir Daftar Produk ---\n\nMasalah atau permintaan saya: ${prompt}` }]
+        });
+
 
         try {
-            console.log("Sending initial prompt to AI:", initialPromptContent);
+            console.log("Sending prompt to AI:", contentsToSend);
             const response = await ai.models.generateContent({
                 model: "gemma-3n-e4b-it",
-                contents: [{ role: "user", parts: [{ text: initialPromptContent }] }],
+                contents: contentsToSend, // Menggunakan seluruh riwayat chat yang telah dibentuk
             });
-            console.log("AI initial response received:", response);
+            console.log("AI response received:", response);
 
             let aiRawText: string = response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts && response.candidates[0].content.parts[0] && response.candidates[0].content.parts[0].text
                 ? response.candidates[0].content.parts[0].text
                 : "Tidak ada respons teks yang valid dari AI.";
 
-            // --- PERBAIKAN: Pasca-pemrosesan untuk memotong JSON ---
+            // Pasca-pemrosesan untuk memotong JSON jika terdeteksi (meskipun seharusnya tidak ada)
             const jsonDelimiter = "--- Daftar Produk (format JSON) ---";
             const indexOfDelimiter = aiRawText.indexOf(jsonDelimiter);
 
             if (indexOfDelimiter !== -1) {
-                // Jika delimiter ditemukan, potong teks dari sana hingga akhir
                 aiRawText = aiRawText.substring(0, indexOfDelimiter).trim();
                 console.warn("Detected and removed JSON delimiter from AI response.");
             }
-            // --- AKHIR PERBAIKAN ---
 
             let recommendedProductIds: number[] = [];
             const productIdExtractRegex = /Produk Cocok \(ID\):\s*(.*?)(?:\n|$)/i;
-            const matchProductIds = aiRawText.match(productIdExtractRegex); // Tetap gunakan aiRawText yang sudah bersih
-
-            let cleanAiResponse = aiRawText; // cleanAiResponse akan menjadi aiRawText yang sudah diproses
-
+            const matchProductIds = aiRawText.match(productIdExtractRegex);
+            let cleanAiResponse = aiRawText;
+            console.log("AI extracted Product IDs:", matchProductIds); // LOG PENTING
             if (matchProductIds && matchProductIds[1]) {
                 const idsString = matchProductIds[1].trim();
                 if (idsString.toLowerCase() !== "tidak ada produk dari database yang cocok" && idsString.toLowerCase() !== "tidak ada") {
                     recommendedProductIds = idsString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
                 }
-                // Hapus juga baris "Produk Cocok (ID):" dari teks yang akan ditampilkan
                 cleanAiResponse = aiRawText.replace(productIdExtractRegex, '').trim();
             }
 
             const newAiMessage: ChatMessage = {
                 role: 'ai',
-                text: cleanAiResponse, // Gunakan cleanAiResponse yang sudah tanpa ID dan JSON
+                text: cleanAiResponse,
                 recommendedProductIds: recommendedProductIds.length > 0 ? recommendedProductIds : undefined
             };
             setChatHistory(prev => [...prev, newAiMessage]);
+            console.log("Updated chatHistory with AI message:", newAiMessage); // LOG BARU
 
         } catch (error: any) {
-            console.error("Terjadi kesalahan saat membuat konten atau memproses respons AI (initial chat):", error);
-            const errorMessage = `Terjadi kesalahan saat mendapatkan rekomendasi awal: ${error.message || "Mohon coba lagi."}`;
+            console.error("Terjadi kesalahan saat membuat konten atau memproses respons AI:", error);
+            const errorMessage = `Terjadi kesalahan saat mendapatkan rekomendasi: ${error.message || "Mohon coba lagi."}`;
             setChatHistory(prev => [...prev, { role: 'ai', text: errorMessage }]);
         } finally {
             setIsThinking(false);
-            clearInitialPrompt();
+            if (isInitialChat) {
+                clearInitialPrompt(); // Hanya clear jika ini adalah prompt awal
+            }
         }
-    }, [ai, isThinking, setChatHistory, clearInitialPrompt]);
+    }, [ai, products, chatHistory, isThinking, clearInitialPrompt]);
 
+    const handleInitialChat = useCallback(async (initialQuestion: string, currentProducts: Product[]): Promise<void> => {
+        if (initialChatProcessed.current || isThinking || !initialQuestion) {
+            console.log("handleInitialChat skipped: already processed, thinking, or no initial question", { initialChatProcessed: initialChatProcessed.current, isThinking, initialQuestion });
+            return;
+        }
+        initialChatProcessed.current = true;
+
+        // Set pesan pengguna awal di riwayat chat UI. Ini hanya terjadi sekali.
+        setChatHistory([{ role: 'user', text: initialQuestion }]);
+        console.log("Initial user message added to chatHistory:", initialQuestion); // LOG BARU
+
+        // Panggil fungsi baru dengan flag isInitialChat
+        await fetchAiRecommendations(initialQuestion, true);
+
+    }, [isThinking, fetchAiRecommendations]);
 
     useEffect(() => {
         let isMounted = true;
 
         if (products.length === 0) {
             getProducts();
+        } else {
+            console.log("Products are already loaded. Total:", products.length); // LOG BARU
         }
 
         if (initialPrompt && initialPrompt.trim() && products.length > 0 && !initialChatProcessed.current && isMounted) {
             console.log("Zustand initialPrompt detected and products loaded. Calling handleInitialChat.");
-            setUserProblem(initialPrompt);
+            setUserProblem(initialPrompt); // Pastikan input userProblem terisi untuk tampilan
             handleInitialChat(initialPrompt, products);
         } else if (initialPrompt && initialPrompt.trim() && products.length === 0 && !initialChatProcessed.current && isMounted) {
             console.log("Zustand initialPrompt detected, but products not loaded yet. Waiting...");
@@ -269,89 +318,34 @@ export default function Chat() {
         return () => {
             isMounted = false;
         };
-    }, [initialPrompt, products.length, getProducts, handleInitialChat]);
-
+    }, [initialPrompt, products.length, getProducts, handleInitialChat, products]); // Tambahkan `products` ke dependensi jika perubahan `products` harus memicu ini
 
     const getSkincareRecommendations = useCallback(async (): Promise<void> => {
-        if (!userProblem.trim()) {
-            setChatHistory(prev => [...prev, { role: 'ai', text: "Mohon masukkan masalah kulit Anda terlebih dahulu." }]);
-            return;
-        }
+        if (!userProblem.trim()) return; // Validasi input
+        // Tambahkan pesan pengguna ke UI. Penting: ini akan memicu render ulang chatHistory.
+        // `fetchAiRecommendations` kemudian akan menggunakan chatHistory yang diperbarui ini.
+        setChatHistory(prev => [...prev, { role: 'user', text: userProblem }]);
+        const currentProblem = userProblem; // Simpan nilai prompt sebelum di-reset
+        setUserProblem(""); // Kosongkan input
+        await fetchAiRecommendations(currentProblem);
+    }, [userProblem, fetchAiRecommendations]);
 
-        setIsThinking(true);
-        const currentUserMessage: ChatMessage = { role: 'user', text: userProblem };
-        setChatHistory(prev => [...prev, currentUserMessage]);
-        setUserProblem("");
+    const handleSuggestedPromptClick = (prompt: string) => {
+        initialChatProcessed.current = false; // Reset ini agar prompt bisa diproses lagi
+        setChatHistory([{ role: 'user', text: prompt }]); // Bersihkan riwayat dan tambahkan pesan saran ke UI
+        setUserProblem(prompt); // Isi input agar terlihat di UI
+        fetchAiRecommendations(prompt);
+    };
 
-        const productDataForAI = products.map(product => ({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            category: product.category,
-            ingredients: JSON.stringify(product.ingredients),
-            features: JSON.stringify(product.features),
-            img_link: product.img_link,
-            shop_link: product.shop_link,
-            description: product.description,
-        }));
-        const productJsonString = JSON.stringify(productDataForAI, null, 2);
+    const getSkincareRecommendationsWithDirectPrompt = useCallback(async (prompt: string): Promise<void> => {
+        if (!prompt.trim()) return; // Validasi input
+        setChatHistory([{ role: 'user', text: prompt }]); // Bersihkan riwayat dan tambahkan pesan langsung ke UI
+        setUserProblem(""); // Kosongkan input
+        await fetchAiRecommendations(prompt);
+    }, [fetchAiRecommendations]);
 
-        const aiHistoryFormatted = chatHistory.map(msg => ({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.text }]
-        }));
-
-        let currentPromptText: string = currentUserMessage.text;
-
-        const contents = aiHistoryFormatted.concat({ role: "user", parts: [{ text: currentPromptText }] });
-
-        if (chatHistory.length === 0) {
-            contents[0].parts[0].text = `${SYSTEM_INSTRUCTION}\n\n--- Daftar Produk (format JSON) ---\n${productJsonString}\n--- Akhir Daftar Produk ---\n\nMasalah atau permintaan saya: ${currentUserMessage.text}`;
-        }
-
-        try {
-            console.log("Sending regular prompt to AI:", contents);
-            const response = await ai.models.generateContent({
-                model: "gemma-3n-e4b-it",
-                contents: contents,
-            });
-            console.log("AI regular response received:", response);
-
-            const aiRawText: string = response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts && response.candidates[0].content.parts[0] && response.candidates[0].content.parts[0].text
-                ? response.candidates[0].content.parts[0].text
-                : "Tidak ada respons teks yang valid dari AI.";
-
-            let recommendedProductIds: number[] = [];
-            const productIdExtractRegex = /Produk Cocok \(ID\):\s*(.*?)(?:\n|$)/i;
-            const matchProductIds = aiRawText.match(productIdExtractRegex);
-            let cleanAiResponse = aiRawText;
-
-            if (matchProductIds && matchProductIds[1]) {
-                const idsString = matchProductIds[1].trim();
-                // Perbaikan: Ganti "tidak ada" dengan "Tidak ada" (case-insensitive)
-                if (idsString.toLowerCase() !== "tidak ada produk dari database yang cocok" && idsString.toLowerCase() !== "tidak ada") {
-                    recommendedProductIds = idsString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
-                }
-                cleanAiResponse = aiRawText.replace(productIdExtractRegex, '').trim();
-            }
-
-            const newAiMessage: ChatMessage = {
-                role: 'ai',
-                text: cleanAiResponse,
-                recommendedProductIds: recommendedProductIds.length > 0 ? recommendedProductIds : undefined
-            };
-            setChatHistory(prev => [...prev, newAiMessage]);
-
-        } catch (error: any) {
-            console.error("Terjadi kesalahan saat membuat konten atau memproses respons AI (regular chat):", error);
-            const errorMessage = `Terjadi kesalahan saat mendapatkan rekomendasi: ${error.message || "Mohon coba lagi."}`;
-            setChatHistory(prev => [...prev, { role: 'ai', text: errorMessage }]);
-        } finally {
-            setIsThinking(false);
-        }
-    }, [products, userProblem, chatHistory, ai, setChatHistory, setIsThinking]);
-
-
+    // Hapus total useEffect yang terkait dengan setRecommendedProducts karena tidak digunakan
+    /*
     useEffect(() => {
         const lastAiMessage = chatHistory[chatHistory.length - 1];
         if (lastAiMessage?.role === 'ai' && lastAiMessage.recommendedProductIds && lastAiMessage.recommendedProductIds.length > 0) {
@@ -361,89 +355,7 @@ export default function Chat() {
             setRecommendedProducts([]);
         }
     }, [chatHistory, products]);
-
-
-    const handleSuggestedPromptClick = (prompt: string) => {
-        initialChatProcessed.current = false;
-        getSkincareRecommendationsWithDirectPrompt(prompt);
-    };
-
-    const getSkincareRecommendationsWithDirectPrompt = useCallback(async (prompt: string): Promise<void> => {
-        if (!prompt.trim()) {
-            setChatHistory(prev => [...prev, { role: 'ai', text: "Mohon masukkan masalah kulit Anda terlebih dahulu." }]);
-            return;
-        }
-
-        setIsThinking(true);
-        const currentUserMessage: ChatMessage = { role: 'user', text: prompt };
-        setChatHistory(prev => [...prev, currentUserMessage]);
-        setUserProblem("");
-
-        const productDataForAI = products.map(product => ({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            category: product.category,
-            ingredients: JSON.stringify(product.ingredients),
-            features: JSON.stringify(product.features),
-            img_link: product.img_link,
-            shop_link: product.shop_link,
-            description: product.description,
-        }));
-        const productJsonString = JSON.stringify(productDataForAI, null, 2);
-
-        const aiHistoryFormatted = chatHistory.map(msg => ({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.text }]
-        }));
-
-        const contents = aiHistoryFormatted.concat({ role: "user", parts: [{ text: prompt }] });
-
-        if (chatHistory.length === 0) {
-            contents[0].parts[0].text = `${SYSTEM_INSTRUCTION}\n\n--- Daftar Produk (format JSON) ---\n${productJsonString}\n--- Akhir Daftar Produk ---\n\nMasalah atau permintaan saya: ${prompt}`;
-        }
-
-        try {
-            console.log("Sending direct prompt to AI:", contents);
-            const response = await ai.models.generateContent({
-                model: "gemma-3n-e4b-it",
-                contents: contents,
-            });
-            console.log("AI direct response received:", response);
-
-            const aiRawText: string = response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts && response.candidates[0].content.parts[0] && response.candidates[0].content.parts[0].text
-                ? response.candidates[0].content.parts[0].text
-                : "Tidak ada respons teks yang valid dari AI.";
-
-            let recommendedProductIds: number[] = [];
-            const productIdExtractRegex = /Produk Cocok \(ID\):\s*(.*?)(?:\n|$)/i;
-            const matchProductIds = aiRawText.match(productIdExtractRegex);
-            let cleanAiResponse = aiRawText;
-
-            if (matchProductIds && matchProductIds[1]) {
-                const idsString = matchProductIds[1].trim();
-                // Perbaikan: Ganti "tidak ada" dengan "Tidak ada" (case-insensitive)
-                if (idsString.toLowerCase() !== "tidak ada produk dari database yang cocok" && idsString.toLowerCase() !== "tidak ada") {
-                    recommendedProductIds = idsString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
-                }
-                cleanAiResponse = aiRawText.replace(productIdExtractRegex, '').trim();
-            }
-
-            const newAiMessage: ChatMessage = {
-                role: 'ai',
-                text: cleanAiResponse,
-                recommendedProductIds: recommendedProductIds.length > 0 ? recommendedProductIds : undefined
-            };
-            setChatHistory(prev => [...prev, newAiMessage]);
-
-        } catch (error: any) {
-            console.error("Terjadi kesalahan saat membuat konten atau memproses respons AI (direct prompt):", error);
-            const errorMessage = `Terjadi kesalahan saat mendapatkan rekomendasi: ${error.message || "Mohon coba lagi."}`;
-            setChatHistory(prev => [...prev, { role: 'ai', text: errorMessage }]);
-        } finally {
-            setIsThinking(false);
-        }
-    }, [products, chatHistory, ai, setChatHistory, setIsThinking]);
+    */
 
 
     return (
@@ -506,14 +418,12 @@ export default function Chat() {
             ) : (
                 // UI Chat Aktif
                 <>
-                    {/* Perbaikan: Hapus div kosong, atur max-w dan mx-auto di elemen yang benar */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-2xl mx-auto w-full">
                         {chatHistory.map((message, index) => (
                             <div key={index}>
                                 {message.role === 'user' ? (
                                     <div className="flex justify-end">
                                         <div className="bg-blue-600 text-white p-3 rounded-t-xl rounded-bl-xl shadow max-w-[75%] break-words">
-                                            {/* Perbaikan: ReactMarkdown untuk pesan pengguna juga */}
                                             <ReactMarkdown>{message.text}</ReactMarkdown>
                                         </div>
                                     </div>
@@ -522,6 +432,7 @@ export default function Chat() {
                                         <div className="bg-white p-3 rounded-t-xl rounded-br-xl shadow max-w-[75%] text-gray-800 break-words">
                                             <ReactMarkdown>{message.text}</ReactMarkdown>
                                         </div>
+                                        {/* BAGIAN KRUSIAL UNTUK RENDERING CARD */}
                                         {message.recommendedProductIds && message.recommendedProductIds.length > 0 && (
                                             <div className="mt-4 w-full grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 {products.filter(p => message.recommendedProductIds?.includes(p.id)).map(product => (

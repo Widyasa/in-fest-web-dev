@@ -11,7 +11,9 @@ export default function FooterSection() {
                     <h2 className="title-font section-title mb-4 md:mb-0">
                         Tetap <span className="text-blue-500">Terhubung</span> Dengan Kami
                     </h2>
-                    <PrimaryButton label={"Contact Us"}/>
+                    <Link href={'https://wa.me/6288987338735?text=Halo, saya ingin bertanya terkait website Avara AI'}>
+                        <PrimaryButton label={"Contact Us"}/>
+                    </Link>
                 </div>
 
                 {/* Main Footer Content */}
@@ -35,23 +37,18 @@ export default function FooterSection() {
                         <h3 className="text-gray-800 font-semibold mb-4">Navigation</h3>
                         <ul className="space-y-3">
                             <li>
-                                <Link href="#" className="text-gray-600 hover:text-main w-fit transition-colors">
+                                <Link href="/home" className="text-gray-600 hover:text-main w-fit transition-colors">
                                     Home
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-gray-600 hover:text-main w-fit transition-colors">
+                                <Link href="/home/chat" className="text-gray-600 hover:text-main w-fit transition-colors">
                                     Ask AI
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-gray-600 hover:text-main w-fit transition-colors">
+                                <Link href="/home/product" className="text-gray-600 hover:text-main w-fit transition-colors">
                                     Product
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="#" className="text-gray-600 hover:text-main w-fit transition-colors">
-                                    About
                                 </Link>
                             </li>
                         </ul>
@@ -96,7 +93,7 @@ export default function FooterSection() {
                             className="flex items-center text-gray-600 hover:text-main w-fit transition-colors"
                         >
                             <Mail className="w-4 h-4 mr-2" />
-                            avaraaisupport@gmail.com
+                            avaraaisupport@support.com
                         </Link>
                     </div>
                 </div>
