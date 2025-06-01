@@ -2,7 +2,22 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+@utility container {
+  padding-inline: 10px;
+  margin-inline: auto;
 
+  @variant sm {
+    padding-inline: 20px;
+  }
+
+  @variant lg {
+    padding-inline: 80px;
+  }
+
+  @variant xl {
+    padding-inline: 120px;
+  }
+}
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

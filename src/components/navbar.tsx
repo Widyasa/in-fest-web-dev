@@ -7,18 +7,18 @@ import { useState } from "react"
 import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger} from "@/components/ui/sheet";
 import {VisuallyHidden} from "@radix-ui/react-visually-hidden";
 import {Button} from "@/components/ui/button";
-import {router} from "next/client";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false)
 
     const navigationLinks = [
-        { name: "Home", href: "/" },
+        { name: "Home", href: "/home" },
         { name: "Ask AI", href: "/home/chat" },
         { name: "Product", href: "/home/product" },
         { name: "About", href: "/home#about" },
     ]
-
+    const pathname = usePathname();
     return (
         <nav className="w-full border-b !bg-white z-50 bg-opacity-100 backdrop-filter-none py-2 fixed">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -40,7 +40,7 @@ export default function Navbar() {
                                 <Link
                                     key={link.name}
                                     href={link.href}
-                                    className={`nav-link text-center ${window.location.pathname === link.href ? "active" : ""}`}
+                                    className={`nav-link text-center ${pathname === link.href ? "active" : ""}`}
                                 >
                                     {link.name}
                                 </Link>
@@ -88,7 +88,7 @@ export default function Navbar() {
                                             <Link
                                                 key={link.name}
                                                 href={link.href}
-                                                className={`nav-link text-center ${window.location.pathname === link.href ? "active" : ""}` }
+                                                className={`nav-link text-center ${pathname === link.href ? "active" : ""}` }
                                                 onClick={() => setIsOpen(false)}
                                             >
                                                 {link.name}

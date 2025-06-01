@@ -2,7 +2,7 @@
 export default function ProblemSection(){
     return(
         <>
-            <section className="problem-section section-margin-top container mx-auto md:px-0 px-4  ">
+            <section className="problem-section section-margin-top container mx-auto">
                 <div className="flex justify-center">
                     <div className="badge">
                         <p className="font-semibold text-sm uppercase">the problem</p>
