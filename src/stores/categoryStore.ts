@@ -9,7 +9,7 @@ interface categoryState {
     loading: boolean;
     loadingCrud: boolean;
     fetchCategories: () => Promise<void>;
-    createCategory: (newCategory: NewCategory) => Promise<void>;
+    createCategory: (newCategory?: NewCategory) => Promise<void>;
     getCategoryById: (categoryId: number) => Promise<void>;
     updateCategory: (updatedCategory: UpdateCategory) => Promise<void>;
     deleteCategory: (categoryId: number) => Promise<void>;

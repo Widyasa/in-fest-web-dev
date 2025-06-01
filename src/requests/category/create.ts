@@ -3,7 +3,7 @@ import { useCategoryStore } from "@/stores/categoryStore";
 import type { NewCategory } from "@/types";
 
 const createCategorySchema = z.object({
-  category_name: z.string().min(2, { message: "Category name must be at least 2 characters" }).trim()
+  category_name: z.string().min(2, { message: "Category name must be at least 2 characters" }).trim().nonempty()
 });
 
 export async function createCategoryRequest(categoryData: NewCategory) {
