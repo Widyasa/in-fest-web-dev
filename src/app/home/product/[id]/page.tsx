@@ -1,12 +1,9 @@
-// app/products/[id]/page.tsx
 'use client';
-
 import { useEffect, useState, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useParams, useRouter } from 'next/navigation'; // Untuk App Router
 import { Check } from 'lucide-react';
 import {Button} from "@/components/ui/button";
-import Navbar from "@/components/navbar"; // Untuk ikon centang di fitur
 import Footer from '@/components/footer';
 
 // Tipe untuk entitas produk (harus konsisten di seluruh aplikasi)
