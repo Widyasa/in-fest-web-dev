@@ -437,7 +437,8 @@ export default function Chat() {
                         <div className="max-w-2xl w-full flex items-center gap-2">
                             <Textarea
                                 placeholder="Ketik pesan Anda..."
-                                className="flex-1 h-12 resize-none p-3 border rounded-full focus:ring-blue-500 focus:border-blue-500 pr-10"
+                                disabled={isThinking}
+                                className="flex-1 h-12 resize-none p-3 border rounded-full focus:ring-blue-500 focus:border-blue-500 pr-10 overflow-hidden"
                                 value={userProblem}
                                 onChange={(e) => setUserProblem(e.target.value)}
                                 onKeyPress={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
