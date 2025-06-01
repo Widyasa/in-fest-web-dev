@@ -8,10 +8,10 @@ export const metadata: Metadata = {
     openGraph: {
         title: 'Avara AI - Konsultasi Skincare Personal dengan AI',
         description: 'Ajukan pertanyaan tentang masalah kulit Anda dan dapatkan rekomendasi skincare personal langsung dari Avara AI bertenaga Gemini.',
-        url: 'https://avara.vercel.app/home/chat', // Ganti dengan domain Anda
+        url: 'https://avara-five.vercel.app/home/chat', // Ganti dengan domain Anda
         images: [
             {
-                url: 'https://avara.vercel.app/img/logo-icon.svg', // Gambar spesifik untuk Chat jika ada
+                url: 'https://avara-five.vercel.app/img/logo-icon.svg', // Gambar spesifik untuk Chat jika ada
                 width: 1200,
                 height: 630,
                 alt: 'Avara AI Chat Interface',

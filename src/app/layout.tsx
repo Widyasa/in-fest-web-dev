@@ -15,7 +15,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-    metadataBase: new URL('https://avara.vercel.app'), // Ganti dengan domain Anda
+    metadataBase: new URL('https://avara-five.vercel.app'), // Ganti dengan domain Anda
     title: {
         default: 'Avara AI - Asisten Skincare Bertenaga AI',
         template: '%s | Avara AI', // Ini akan menjadi template untuk judul halaman spesifik
@@ -28,11 +28,11 @@ export const metadata: Metadata = {
     openGraph: {
         title: 'Avara AI - Asisten Skincare Bertenaga AI',
         description: 'Avara AI adalah asisten skincare bertenaga Gemini AI yang memberikan rekomendasi produk personal, kiat perawatan wajah, dan analisis ingredients.',
-        url: 'https://avara.vercel.app', // Ganti dengan domain Anda
+        url: 'https://avara-five.vercel.app', // Ganti dengan domain Anda
         siteName: 'Avara AI',
         images: [
             {
-                url: 'https://avara.vercel.app/img/logo-icon.svg', // Ganti dengan URL gambar OG Anda (misal logo atau hero image)
+                url: 'https://avara-five.vercel.app/img/logo-icon.svg', // Ganti dengan URL gambar OG Anda (misal logo atau hero image)
                 width: 1200,
                 height: 630,
                 alt: 'Avara AI Skincare Assistant',
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
         card: 'summary_large_image',
         title: 'Avara AI - Asisten Skincare Bertenaga AI',
         description: 'Avara AI adalah asisten skincare bertenaga Gemini AI yang memberikan rekomendasi produk personal, kiat perawatan wajah, dan analisis ingredients.',
-        images: ['https://avara.vercel.app/img/logo-icon.svg'], // Ganti dengan URL gambar OG Anda
+        images: ['https://avara-five.vercel.app/img/logo-icon.svg'], // Ganti dengan URL gambar OG Anda
         creator: '@weedyisay', // Ganti dengan Twitter handle Anda jika ada
     },
     // robots: {

@@ -17,10 +17,10 @@ export const metadata: Metadata = {
     openGraph: {
         title: 'Avara AI - Mulai Perjalanan Kulit Sehat Anda',
         description: 'Mulai perjalanan kulit sehat Anda dengan Avara AI. Dapatkan rekomendasi produk, kiat perawatan, dan analisis ingredient yang dipersonalisasi.',
-        url: 'https://avara.vercel.app/', // Ganti dengan domain Anda
+        url: 'https://avara-five.vercel.app/', // Ganti dengan domain Anda
         images: [
             {
-                url: 'https://avara.vercel.app/img/logo-icon.svg', // Gambar spesifik untuk Home jika ada
+                url: 'https://avara-five.vercel.app/img/logo-icon.svg', // Gambar spesifik untuk Home jika ada
                 width: 1200,
                 height: 630,
                 alt: 'Avara AI Home Page',
