@@ -57,6 +57,7 @@ export default function ProductDetailForm() {
               : "-"
           }
           readOnly
+          rows={5}
         />
       </div>
 
