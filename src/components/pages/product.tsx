@@ -27,7 +27,7 @@ export default function Product() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // State untuk filter kategori
+    const [selectedCategory, setSelectedCategory] = useState<string | null>('All'); // State untuk filter kategori
     const [searchTerm, setSearchTerm] = useState<string>(''); // State untuk search input
     const [categories, setCategories] = useState<string[]>([]); // State untuk daftar kategori unik
 
@@ -90,68 +90,71 @@ export default function Product() {
     });
 
     return (
-        <div className="flex flex-col min-h-screen container mx-auto bg-gray-50 pt-[80px]">
-            <main className="flex-1 mx-auto px-4 py-8">
-                <h1 className="text-4xl font-extrabold text-center text-gray-900 mb-10">
-                    Discover Our Products
-                </h1>
+        <>
+            <div className="bg-gray-50">
+                <div className="flex flex-col min-h-screen container mx-auto pt-[80px]">
+                    <main className="flex-1 mx-auto px-4 py-8">
+                        <h1 className="text-4xl font-extrabold text-center text-gray-900 mb-10">
+                            Discover Our Products
+                        </h1>
 
-                {/* Filter Kategori */}
-                <div className="flex flex-wrap justify-center gap-2 mb-8">
-                    {categories.map(category => (
-                        <button
-                            key={category}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                selectedCategory === category
-                                    ? 'bg-main text-white shadow-md'
-                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                            }`}
-                            onClick={() => setSelectedCategory(category)}
-                        >
-                            {category}
-                        </button>
-                    ))}
+                        {/* Filter Kategori */}
+                        <div className="flex flex-wrap justify-center gap-2 mb-8">
+                            {categories.map(category => (
+                                <button
+                                    key={category}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                        selectedCategory === category
+                                            ? 'bg-main text-white shadow-md'
+                                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                                    }`}
+                                    onClick={() => setSelectedCategory(category)}
+                                >
+                                    {category}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="relative w-full max-w-xl mx-auto mb-10">
+                            <input
+                                type="text"
+                                placeholder="Find Product & Brand"
+                                className="w-full p-3 pl-10 pr-4 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-md"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                        </div>
+
+                        {loading && (
+                            <div className="flex justify-center items-center h-40">
+                                <p className="text-gray-600 text-lg">Memuat produk...</p>
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="text-center text-red-600 mt-4">
+                                <p>{error}</p>
+                            </div>
+                        )}
+
+                        {!loading && !error && filteredProducts.length === 0 && (
+                            <div className="text-center text-gray-600 mt-4">
+                                <p>Tidak ada produk yang ditemukan sesuai kriteria Anda.</p>
+                            </div>
+                        )}
+
+                        {/* Product Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            {filteredProducts.map(product => (
+                                <ProductCard key={product.id} product={product} />
+                            ))}
+                        </div>
+                    </main>
                 </div>
-
-                {/* Search Bar */}
-                <div className="relative w-full max-w-xl mx-auto mb-10">
-                    <input
-                        type="text"
-                        placeholder="Find Product & Brand"
-                        className="w-full p-3 pl-10 pr-4 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-md"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                </div>
-
-                {loading && (
-                    <div className="flex justify-center items-center h-40">
-                        <p className="text-gray-600 text-lg">Memuat produk...</p>
-                    </div>
-                )}
-
-                {error && (
-                    <div className="text-center text-red-600 mt-4">
-                        <p>{error}</p>
-                    </div>
-                )}
-
-                {!loading && !error && filteredProducts.length === 0 && (
-                    <div className="text-center text-gray-600 mt-4">
-                        <p>Tidak ada produk yang ditemukan sesuai kriteria Anda.</p>
-                    </div>
-                )}
-
-                {/* Product Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {filteredProducts.map(product => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                </div>
-            </main>
-
-            <FooterSection /> {/* Integrasi Footer */}
-        </div>
+                <FooterSection /> {/* Integrasi Footer */}
+            </div>
+        </>
     );
 }

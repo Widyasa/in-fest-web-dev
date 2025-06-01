@@ -5,11 +5,10 @@ import SolutionSection from "@/components/section/solution";
 import FooterSection from "@/components/footer";
 import CtaSection from "@/components/section/cta";
 import {Metadata} from "next";
+import TestimonialsSection from "@/components/section/testimony";
 
 
-function TestimonySection() {
-    return null;
-}
+
 export const metadata: Metadata = {
     title: 'Home', // Ini akan menjadi "Home | Avara AI" karena template di layout.tsx
     description: 'Mulai perjalanan kulit sehat Anda dengan Avara AI. Dapatkan rekomendasi produk, kiat perawatan, dan analisis ingredient yang dipersonalisasi.',
@@ -38,7 +37,7 @@ export default function Home() {
                 <ProblemSection />
                 <SolutionSection />
                 <ChatSection />
-                <TestimonySection />
+                <TestimonialsSection />
                 <CtaSection />
                 <FooterSection />
             </div>
