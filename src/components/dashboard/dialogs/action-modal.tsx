@@ -47,7 +47,11 @@ export function ActionModal({
         <div className="py-4">{children}</div>
         <DialogFooter>
           {type !== "detail" && (
-            <Button onClick={onSubmit} disabled={loading}>
+            <Button
+              onClick={onSubmit}
+              disabled={loading}
+              variant={type === "delete" ? "destructive" : "default"}
+            >
               {loading ? "Loading..." : defaultButtons[type]}
             </Button>
           )}
@@ -57,6 +61,7 @@ export function ActionModal({
             </Button>
           )}
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
