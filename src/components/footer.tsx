@@ -22,7 +22,7 @@ export default function FooterSection() {
                             <div className="w-10 h-10 bg-main rounded-lg flex items-center justify-center mr-3">
                                 <img src="/img/logo-icon.svg" alt=""/>
                             </div>
-                            <span className="text-xl font-semibold title-font">Avara</span>
+                            <span className="text-xl font-semibold title-font text-main">Avara</span>
                         </div>
                         <p className="text-gray-600 text-sm leading-relaxed">
                             Avara AI adalah asisten skincare berbasis kecerdasan buatan yang dirancang untuk membantu kamu menemukan
