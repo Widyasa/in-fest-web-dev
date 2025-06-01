@@ -13,12 +13,12 @@ const pageTitles: Record<string, string> = {
 }
 
 function getDynamicTitle(pathname: string): string {
-  if (/^\/dashboard\/products\/[^\/]+$/.test(pathname)) {
-    return pageTitles["/dashboard/products/[id]"]
+  if (/^\/dashboard\/product\/[^\/]+$/.test(pathname)) {
+    return pageTitles["/dashboard/product/[id]"]
   }
 
-  if (/^\/dashboard\/products\/[^\/]+\/update$/.test(pathname)) {
-    return pageTitles["/dashboard/products/[id]/update"]
+  if (/^\/dashboard\/product\/[^\/]+\/update$/.test(pathname)) {
+    return pageTitles["/dashboard/product/[id]/update"]
   }
 
   return pageTitles[pathname] ?? "Dashboard"
