@@ -3,7 +3,7 @@ import type { Category, NewCategory, UpdateCategory} from "@/types";
 import { supabaseClient } from "@/utils/supabase";
 
 const supabase = supabaseClient;
-interface categorieState {
+interface categoryState {
     categories: Category[];
     selectedCategory: Category | null;
     loading: boolean;
@@ -15,7 +15,7 @@ interface categorieState {
     deleteCategory: (categoryId: number) => Promise<void>;
 }
 
-export const useCategoryStore = create<categorieState>((set) => ({
+export const useCategoryStore = create<categoryState>((set) => ({
     categories: [],
     selectedCategory: null,
     loading: false,

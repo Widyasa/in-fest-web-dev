@@ -6,10 +6,10 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard Page",
-  "/dashboard/categories": "Categories Page",
-  "/dashboard/products": "Products Page",
-  "/dashboard/products/[id]": "Product Detail Page",
-  "/dashboard/products/[id]/update": "Update Product Page",
+  "/dashboard/category": "Categories Page",
+  "/dashboard/product": "Products Page",
+  "/dashboard/product/[id]": "Product Detail Page",
+  "/dashboard/product/[id]/update": "Update Product Page",
 }
 
 function getDynamicTitle(pathname: string): string {

@@ -35,12 +35,12 @@ const data = {
     },
     {
       title: "Categories",
-      url: "/dashboard/categories",
+      url: "/dashboard/category",
       icon: IconCategory,
     },
     {
       title: "Products",
-      url: "/dashboard/products",
+      url: "/dashboard/product",
       icon: IconPackage,
     },
   ],

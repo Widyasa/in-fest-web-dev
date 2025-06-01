@@ -1,62 +1,64 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useCategoryStore } from "@/stores/categoryStore";
+import { useProductStore } from "@/stores/productStore";
 import { useReactTable, getCoreRowModel, getPaginationRowModel, getFilteredRowModel } from "@tanstack/react-table";
-import { getCategoryColumns } from "@/components/dashboard/datatable/columns/category";
+import { getProductColumns } from "@/components/dashboard/datatable/columns/product";
 import { DataTable } from "@/components/dashboard/datatable/datatable";
 import { DataTablePagination } from "@/components/dashboard/datatable/datatable-pagination";
 import { TableSearch } from "@/components/dashboard/datatable/table-search";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconPlus } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { toast } from "sonner";
-import type { Category } from "@/types";
-import CreateCategoryModal from "@/components/forms/category/create";
-import UpdateCategoryModal from "@/components/forms/category/update";
-import { DeleteCategoryDialog } from "@/components/forms/category/delete";
+import { useRouter } from "next/navigation";
+import { DeleteProductDialog } from "@/components/dashboard/forms/product/delete";
 
-export default function CategoryPage() {
+export default function ProductPage() {
   const [globalFilter, setGlobalFilter] = useState("");
-  const { categories, fetchCategories, loading} = useCategoryStore();
-  const [openCreateModal, setOpenCreateModal] = useState(false);
-  const [openUpdateModal, setOpenUpdateModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const { products, fetchProducts, loading} = useProductStore();
+  const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedCategoryId, setSelectedCategoryId] = useState(0);
-  const [selectedCategoryName, setSelectedCategoryName] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState(0);
+  const [selectedProductCode, setSelectedProductCode] = useState("");
 
   useEffect(() => {
-    const getCategories = async () => {
+    const getProducts = async () => {
       try {
-        await fetchCategories();
+        await fetchProducts();
       } catch (error) {
         if (error instanceof Error) {
           toast.error(error.message);
         } else {
-          toast.error("An error occurred while retrieving category data");
+          toast.error("Terjadi kesalahan saat mengambil data product");
         }
       }
     };
-    getCategories();
-  }, [fetchCategories]);
+    getProducts();
+  }, [fetchProducts]);
 
   const table = useReactTable({
-    data: categories,
-    columns: getCategoryColumns({
+    data: products,
+    columns: getProductColumns({
       actions: (row) => [
+        {
+          label: "View Details",
+          onClick: () => {
+            router.push(`/dashboard/product/${row.id}`);
+          },
+        },
         {
           label: "Update",
           onClick: () => {
-            setSelectedCategory(row);
-            setOpenUpdateModal(true);
+            router.push(`/dashboard/product/${row.id}/update`);
           },
         },
         {
           label: "Delete",
           onClick: async () => {
-            setSelectedCategoryId(row.id);
-            setSelectedCategoryName(row.category_name);
+            setSelectedProductId(row.id);
+            setSelectedProductCode(row.name);
             setDeleteDialogOpen(true);
           },
         },
@@ -73,11 +75,11 @@ export default function CategoryPage() {
     <div className="px-4 lg:px-6">
       <Card>
         <CardHeader>
-          <CardTitle>Category List</CardTitle>
+          <CardTitle>Product List</CardTitle>
           <div className="flex gap-5 items-center mt-2">
             <TableSearch value={globalFilter} onChange={setGlobalFilter} />
-            <Button onClick={() => setOpenCreateModal(true)}>
-              <IconPlus className="w-5 h-5 mr-2" /> Create Category
+            <Button asChild>
+              <Link href="/dashboard/product/create"><IconPlus className="w-5 h-5 mr-2" />Create Product</Link>
             </Button>
           </div>
         </CardHeader>
@@ -86,15 +88,13 @@ export default function CategoryPage() {
             <p>Loading...</p>
           ) : (
             <>
-              <DataTable table={table} columnsLength={getCategoryColumns({}).length} />
+              <DataTable table={table} columnsLength={getProductColumns({}).length} />
               <DataTablePagination table={table} />
             </>
           )}
         </CardContent>
       </Card>
-      <CreateCategoryModal open={openCreateModal} onClose={() => setOpenCreateModal(false)} />
-      <UpdateCategoryModal open={openUpdateModal} onClose={() => setOpenUpdateModal(false)} category={selectedCategory} />
-      <DeleteCategoryDialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} categoryId={selectedCategoryId} categoryName={selectedCategoryName} />
+      <DeleteProductDialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} productId={selectedProductId} productName={selectedProductCode} />
     </div>
   );
 }
