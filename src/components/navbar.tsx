@@ -7,19 +7,20 @@ import { useState } from "react"
 import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger} from "@/components/ui/sheet";
 import {VisuallyHidden} from "@radix-ui/react-visually-hidden";
 import {Button} from "@/components/ui/button";
+import {router} from "next/client";
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false)
 
     const navigationLinks = [
         { name: "Home", href: "/" },
-        { name: "Ask AI", href: "/ask-ai" },
-        { name: "Product", href: "/product" },
-        { name: "About", href: "/about" },
+        { name: "Ask AI", href: "/home/chat" },
+        { name: "Product", href: "/home/product" },
+        { name: "About", href: "/home#about" },
     ]
 
     return (
-        <nav className="w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 py-2">
+        <nav className="w-full border-b !bg-white z-50 bg-opacity-100 backdrop-filter-none py-2 fixed">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
                     {/* Logo */}
@@ -39,7 +40,7 @@ export default function Navbar() {
                                 <Link
                                     key={link.name}
                                     href={link.href}
-                                    className="nav-link text-center"
+                                    className={`nav-link text-center ${window.location.pathname === link.href ? "active" : ""}`}
                                 >
                                     {link.name}
                                 </Link>
@@ -49,16 +50,18 @@ export default function Navbar() {
 
                     {/* Desktop CTA Button */}
                     <div className="hidden md:block">
-                        <button className="btn btn-primary flex items-center gap-3">
-                            <img src="/icon/chat.svg" alt=""/>
-                            New Chat
-                        </button>
+                        <Link href={'/home/chat'}>
+                            <button className="btn btn-primary flex items-center gap-3">
+                                <img src="/icon/chat.svg" alt=""/>
+                                New Chat
+                            </button>
+                        </Link>
                     </div>
 
                     {/* Mobile menu button */}
                     <div className="md:hidden">
                         <Sheet open={isOpen} onOpenChange={setIsOpen}>
-                            <SheetHeader>
+                            <SheetHeader className={"h-0 p-0"}>
                                 <VisuallyHidden>
                                     <SheetTitle>Navigation Menu</SheetTitle>
                                 </VisuallyHidden>
@@ -85,7 +88,7 @@ export default function Navbar() {
                                             <Link
                                                 key={link.name}
                                                 href={link.href}
-                                                className="nav-link text-center"
+                                                className={`nav-link text-center ${window.location.pathname === link.href ? "active" : ""}` }
                                                 onClick={() => setIsOpen(false)}
                                             >
                                                 {link.name}
@@ -95,10 +98,12 @@ export default function Navbar() {
 
                                     {/* Mobile CTA Button */}
                                     <div className="py-4 w-full flex justify-center">
-                                        <Button className="btn btn-primary flex items-center gap-3">
-                                            <img src="/icon/chat.svg" alt=""/>
-                                            New Chat
-                                        </Button>
+                                        <Link href={'/home/chat'}>
+                                            <Button className="btn btn-primary flex items-center gap-3">
+                                                <img src="/icon/chat.svg" alt=""/>
+                                                New Chat
+                                            </Button>
+                                        </Link>
                                     </div>
                                 </div>
                             </SheetContent>
