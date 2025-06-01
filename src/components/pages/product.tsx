@@ -90,8 +90,8 @@ export default function Product() {
     });
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
-            <main className="flex-1 container mx-auto px-4 py-8">
+        <div className="flex flex-col min-h-screen container mx-auto bg-gray-50 pt-[80px]">
+            <main className="flex-1 mx-auto px-4 py-8">
                 <h1 className="text-4xl font-extrabold text-center text-gray-900 mb-10">
                     Discover Our Products
                 </h1>

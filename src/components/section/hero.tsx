@@ -8,7 +8,7 @@ export default function HeroSection() {
             <section className="hero-section md:mx-11">
                 {/* Perbaikan di sini: Tambahkan min-h-screen untuk base, dan pastikan ukuran di md: */}
                 {/* Gunakan relative dan overflow-hidden pada container background */}
-                <div className="bg-[url('/img/hero-bg.svg')] w-full min-h-[620px] h-auto md:h-[620px] rounded-xl bg-cover bg-center relative overflow-hidden">
+                <div className="w-full min-h-[620px] h-auto md:h-[620px] rounded-xl bg-cover bg-center relative overflow-hidden">
                     <div className="relative h-full w-full"> {/* Pastikan h-full dan w-full di div ini */}
                         <div className="relative w-full"> {/* Pastikan w-full di div ini */}
                             <div className="flex justify-center">
