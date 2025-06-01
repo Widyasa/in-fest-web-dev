@@ -2,14 +2,14 @@
 export default function SolutionSection(){
     return(
         <>
-            <section className="problem-section section-margin-top container mx-auto">
+            <section id={'about'} className="problem-section section-margin-top container mx-auto">
                 <div className="flex justify-center">
                     <div className="badge">
                         <p className="font-semibold text-sm uppercase">WHAT WE SERVE</p>
                     </div>
                 </div>
                 <div className="mt-14">
-                    <div className="grid grid-cols-12 items-center gap-10">
+                    <div className="grid grid-cols-12 items-center md:gap-8">
                         <div className="lg:col-span-5 lg:block hidden">
                             <img src="/img/solution/solution-img.png" alt="problem image" className="w-full"/>
                         </div>

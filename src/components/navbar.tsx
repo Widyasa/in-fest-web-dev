@@ -16,7 +16,6 @@ export default function Navbar() {
         { name: "Home", href: "/home" },
         { name: "Ask AI", href: "/home/chat" },
         { name: "Product", href: "/home/product" },
-        { name: "About", href: "/home#about" },
     ]
     const pathname = usePathname();
     return (

@@ -48,6 +48,9 @@ export const metadata: Metadata = {
         images: ['https://avara-five.vercel.app/img/logo-icon.svg'], // Ganti dengan URL gambar OG Anda
         creator: '@weedyisay', // Ganti dengan Twitter handle Anda jika ada
     },
+    icons: {
+        icon: 'https://avara-five.vercel.app/img/logo-icon.svg',
+    },
     // robots: {
     //   index: true,
     //   follow: true,

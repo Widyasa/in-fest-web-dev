@@ -9,9 +9,9 @@ export default function ProblemSection(){
                     </div>
                 </div>
                 <div className="mt-14">
-                    <div className="grid grid-cols-12 items-center gap-10">
+                    <div className="grid grid-cols-12 items-center md:gap-8 gap-0">
                         <div className="lg:col-span-7 xl:col-span-6 col-span-12">
-                            <h2 className="title-font text-[40px] section-title leading-[130%]">
+                            <h2 className="title-font section-title leading-[130%]">
                                 <span className="text-main">Masalah</span> Yang Sering <br className="md:block hidden"/>
                                 Muncul Saat Memilih Skincare
                             </h2>

@@ -68,7 +68,7 @@ export default function ChatSection() {
     };
 
     return (
-        <main className="flex section-margin-top flex-col items-center bg-[#f0f4f9] p-4"> {/* Tambah min-h-screen untuk memastikan layout */}
+        <section id={"chat"} className="flex section-margin-top flex-col items-center bg-[#f0f4f9] p-4"> {/* Tambah min-h-screen untuk memastikan layout */}
             <div className="w-full max-w-3xl mx-auto flex flex-col items-center pt-8 pb-16">
                 {/* AI Consultant Header */}
                 <div className="badge text-sm font-semibold"> {/* Tambah styling badge agar sesuai gambar */}
@@ -123,6 +123,6 @@ export default function ChatSection() {
                     </div>
                 </div>
             </div>
-        </main>
+        </section>
     );
 }
