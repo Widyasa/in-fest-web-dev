@@ -137,11 +137,7 @@ export default function ProductDetailPage() {
 
                         {/* Rating and Reviews (Jika ada) */}
 
-                        <h2 className="text-xl font-bold  mb-2">{product.category}</h2> {/* Contoh tambahan category */}
-                        <p className="text-gray-600 text-base mb-4 leading-relaxed">
-                            {product.description || "Deskripsi produk belum tersedia."}
-                        </p>
-
+                        <h2 className="text-xl font-bold  mb-2">{product.category}</h2>
                         <div className="flex items-center justify-center md:justify-start gap-4 mt-6">
                             <a
                                 href={product.shop_link || '#'}
