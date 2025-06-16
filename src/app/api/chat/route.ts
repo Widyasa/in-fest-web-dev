@@ -4,6 +4,7 @@ import { google } from "@ai-sdk/google";
 export const runtime = 'edge'; 
 
 export async function POST(req: Request) {
+  
   const { messages, productsData } = await req.json();
 
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) { 
