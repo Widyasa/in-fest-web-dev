@@ -4,11 +4,29 @@ import { google } from "@ai-sdk/google";
 export const runtime = 'edge';
 
 export async function POST(req: Request) {
+  try {
     const { messages, productsData } = await req.json();
 
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-        return new Response("Google Generative AI API key (GOOGLE_GENERATIVE_AI_API_KEY) not configured on server.", { status: 500 });
+      return new Response(
+        "Google Generative AI API key (GOOGLE_GENERATIVE_AI_API_KEY) not configured on server.",
+        { status: 500 }
+      );
     }
+
+    if (!Array.isArray(messages) || !productsData) {
+      return new Response(
+        JSON.stringify({ error: "Invalid request. Messages or product data missing." }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // 👇 Potong messages biar tidak terlalu panjang
+    const trimmedMessages = messages.slice(-6);
+
+    // ⬇️ Boleh dipertahankan sementara saat debug
+    console.log("Total messages:", trimmedMessages.length);
+    console.log("Products count:", productsData.length);
 
     const productJsonString = JSON.stringify(productsData, null, 2);
 
@@ -76,33 +94,32 @@ ${productJsonString}
 --- Akhir Daftar Produk ---
 `;
 
-    try {
-        const result = await streamText({
-            model: google("gemini-1.5-flash"),
-            system: SYSTEM_INSTRUCTION,
-            messages: messages, // Menggunakan array messages yang dikirim dari frontend
-            temperature: 0.7,
-            maxTokens: 2000,
-        });
+    
+const result = await streamText({
+  model: google("gemini-1.5-flash"),
+  system: SYSTEM_INSTRUCTION,
+  messages: trimmedMessages,
+  temperature: 0.7,
+  maxTokens: 2000,
+});
 
-        let fullTextFromAI = '';
-        for await (const chunk of result.textStream) {
-            fullTextFromAI += chunk;
-        }
+let fullTextFromAI = '';
+for await (const chunk of result.textStream) {
+  fullTextFromAI += chunk;
+}
 
-        // Mengembalikan respons AI mentah penuh ke frontend
-        return new Response(JSON.stringify({
-            content: fullTextFromAI // Kirim teks mentah penuh dari AI
-        }), {
-            headers: { 'Content-Type': 'application/json' },
-        });
+return new Response(JSON.stringify({ content: fullTextFromAI }), {
+  headers: { "Content-Type": "application/json" },
+});
 
-    } catch (error) {
-        console.error("Gemini API Error:", error);
-        if (error instanceof Error) {
-            console.error("Error message:", error.message);
-            console.error("Error name:", error.name);
-        }
-        return new Response(JSON.stringify({ error: `Error connecting to Gemini AI: ${error instanceof Error ? error.message : String(error)}`, details: error instanceof Error ? error.message : String(error) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-    }
+} catch (error: any) {
+console.error("Gemini API Error:", error);
+return new Response(
+  JSON.stringify({
+    error: "Error connecting to Gemini AI",
+    details: error?.message || String(error),
+  }),
+  { status: 500, headers: { "Content-Type": "application/json" } }
+);
+}
 }

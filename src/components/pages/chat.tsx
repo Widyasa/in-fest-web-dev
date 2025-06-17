@@ -1,255 +1,226 @@
-'use client'
+"use client";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CircleCheck, Droplet, Package, Search, ShieldCheck, Sparkles, Send, Loader2 } from "lucide-react";
+import {
+  CircleCheck,
+  Droplet,
+  Package,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Send,
+  Loader2,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import useChatStore from "@/stores/chatStore";
 import ProductCard from "@/components/product-card";
-import removeMarkdown from 'remove-markdown';
+import removeMarkdown from "remove-markdown";
 
 interface Product {
-    id: number;
-    name: string;
-    ingredients: string[];
-    price: number;
-    features: string[];
-    img_link: string | null;
-    shop_link: string | null;
-    created_at: string;
-    category: string;
-    description?: string | null;
+  id: number;
+  name: string;
+  ingredients: string[];
+  price: number;
+  features: string[];
+  img_link: string | null;
+  shop_link: string | null;
+  created_at: string;
+  category: string;
+  description?: string | null;
 }
 
 interface ChatMessage {
-    role: 'user' | 'ai';
-    text: string;
-    recommendedProductIds?: number[];
-    hiddenProductIdText?: string;
-    timestamp: number;
+  role: "user" | "ai";
+  text: string;
+  recommendedProductIds?: number[];
+  hiddenProductIdText?: string;
+  timestamp: number;
 }
 
 const supabase = createClientComponentClient();
 
 export default function Chat() {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [userProblem, setUserProblem] = useState<string>("");
-    const [isThinking, setIsThinking] = useState<boolean>(false);
-    const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [userProblem, setUserProblem] = useState<string>("");
+  const [isThinking, setIsThinking] = useState<boolean>(false);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const initialChatProcessed = useRef(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const initialChatProcessed = useRef(false);
 
-    const initialPrompt = useChatStore((state) => state.initialPrompt);
-    const clearInitialPrompt = useChatStore((state) => state.clearInitialPrompt);
+  const initialPrompt = useChatStore((state) => state.initialPrompt);
+  const clearInitialPrompt = useChatStore((state) => state.clearInitialPrompt);
 
-    const suggestedPrompts = [
-        {
-            id: 1, label: "Produk untuk kulit kering", icon: <Package size={16} className="mr-1" />,
-        },
-        {
-            id: 2, label: "Produk untuk kulit berminyak", icon: <Droplet size={16} className="mr-1" />,
-        },
-        {
-            id: 3, label: "Kulit Berjerawat", icon: <CircleCheck size={16} className="mr-1" />,
-        },
-        {
-            id: 4, label: "Menghilangkan bekas jerawat", icon: <ShieldCheck size={16} className="mr-1" />,
-        },
-        {
-            id: 5, label: "Mengatasi warna kulit tidak merata", icon: <Search size={16} className="mr-1" />,
-        },
-        {
-            id: 6, label: "Produk skincare herbal", icon: <Sparkles size={16} className="mr-1" />,
-        },
-        {
-            id: 7, label: "Rekomendasi sunscreen kulit sensitif", icon: <ShieldCheck size={16} className="mr-1" />,
-        },
-    ];
+  const suggestedPrompts = [
+    { id: 1, label: "Produk untuk kulit kering", icon: <Package size={16} className="mr-1" /> },
+    { id: 2, label: "Produk untuk kulit berminyak", icon: <Droplet size={16} className="mr-1" /> },
+    { id: 3, label: "Kulit Berjerawat", icon: <CircleCheck size={16} className="mr-1" /> },
+    { id: 4, label: "Menghilangkan bekas jerawat", icon: <ShieldCheck size={16} className="mr-1" /> },
+    { id: 5, label: "Mengatasi warna kulit tidak merata", icon: <Search size={16} className="mr-1" /> },
+    { id: 6, label: "Produk skincare herbal", icon: <Sparkles size={16} className="mr-1" /> },
+    { id: 7, label: "Rekomendasi sunscreen kulit sensitif", icon: <ShieldCheck size={16} className="mr-1" /> },
+  ];
 
-    const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, []);
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
-    const addMessageToHistory = useCallback((message: Omit<ChatMessage, 'timestamp'>) => {
-        setChatHistory(prev => [...prev, { ...message, timestamp: Date.now() }].sort((a, b) => a.timestamp - b.timestamp));
-    }, []);
+  const addMessageToHistory = useCallback((message: Omit<ChatMessage, "timestamp">) => {
+    setChatHistory((prev) => [...prev, { ...message, timestamp: Date.now() }]);
+  }, []);
 
-    const getProducts = useCallback(async (): Promise<void> => {
-        try {
-            const { data, error } = await supabase
-                .from('products')
-                .select('*');
+  const getProducts = useCallback(async (): Promise<void> => {
+    try {
+      const { data, error } = await supabase.from("products").select("*");
+      if (error) throw error;
 
-            if (error) throw error;
+      const typedProducts: Product[] = data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        category: item.category,
+        img_link: item.img_link,
+        shop_link: item.shop_link,
+        created_at: item.created_at,
+        description: item.description,
+        ingredients: typeof item.ingredients === "string" ? JSON.parse(item.ingredients) : item.ingredients,
+        features: typeof item.features === "string" ? JSON.parse(item.features) : item.features,
+      }));
 
-            const typedProducts: Product[] = data.map((item: any) => ({
-                id: item.id,
-                name: item.name,
-                price: item.price,
-                category: item.category,
-                img_link: item.img_link,
-                shop_link: item.shop_link,
-                created_at: item.created_at,
-                description: item.description,
-                ingredients: typeof item.ingredients === 'string' ? JSON.parse(item.ingredients) : item.ingredients,
-                features: typeof item.features === 'string' ? JSON.parse(item.features) : item.features,
-            }));
+      setProducts(typedProducts);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setProducts([]);
+    }
+  }, []);
 
-            setProducts(typedProducts);
-        } catch (error) {
-            console.error('Error fetching products:', error);
-            setProducts([]);
+  const fetchAiRecommendations = useCallback(async (prompt: string, latestChatHistory: ChatMessage[]): Promise<void> => {
+    if (!prompt.trim()) {
+      addMessageToHistory({ role: "ai", text: "Mohon masukkan masalah kulit Anda terlebih dahulu." });
+      return;
+    }
+
+    setIsThinking(true);
+
+    const productDataForAI = products.map((product) => ({
+      id: product.id,
+      name: product.name,
+      ingredients: product.ingredients,
+      price: product.price,
+      features: product.features,
+      img_link: product.img_link,
+      shop_link: product.shop_link,
+      category: product.category,
+      description: product.description,
+    }));
+
+    try {
+      const messagesForApi = latestChatHistory.map((msg) => ({
+        role: msg.role === "user" ? "user" : "assistant",
+        content: msg.role === "user" ? removeMarkdown(msg.text) : msg.text + (msg.hiddenProductIdText || ""),
+      })).slice(-6); // kirim hanya 6 pesan terakhir
+
+      messagesForApi.push({ role: "user", content: removeMarkdown(prompt) });
+
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: messagesForApi, productsData: productDataForAI }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiRawResponse = data.content;
+
+      let recommendedProductIds: number[] = [];
+      let hiddenProductIdText: string = "";
+      const productIdExtractRegex = /Produk Cocok \(ID\):\s*(.*?)(?:\n|$)/i;
+      const inlineIdRegex = /\s*\(ID:\s*\d+\)/g;
+
+      const matchProductIds = aiRawResponse.match(productIdExtractRegex);
+      if (matchProductIds && matchProductIds[1]) {
+        const idsString = matchProductIds[1].trim();
+        if (idsString.toLowerCase() !== "tidak ada produk dari database yang cocok" && idsString.toLowerCase() !== "tidak ada") {
+          recommendedProductIds = idsString
+            .split(",")
+            .map((id) => parseInt(id.trim()))
+            .filter((id) => !isNaN(id));
         }
-    }, []);
+        hiddenProductIdText = matchProductIds[0];
+      }
 
-    const fetchAiRecommendations = useCallback(async (prompt: string, latestChatHistory: ChatMessage[]): Promise<void> => {
-        if (!prompt.trim() || isThinking) {
-            if (!isThinking && !prompt.trim()) {
-                addMessageToHistory({
-                    role: 'ai',
-                    text: "Mohon masukkan masalah kulit Anda terlebih dahulu."
-                });
-            }
-            return;
-        }
+      let textToRender = aiRawResponse.replace(productIdExtractRegex, "").replace(inlineIdRegex, "").trim();
 
-        setIsThinking(true);
+      addMessageToHistory({
+        role: "ai",
+        text: textToRender,
+        recommendedProductIds: recommendedProductIds.length > 0 ? recommendedProductIds : undefined,
+        hiddenProductIdText,
+      });
+    } catch (error: any) {
+      console.error("Error communicating with API:", error);
+      addMessageToHistory({ role: "ai", text: `Terjadi kesalahan saat mendapatkan rekomendasi: ${error.message || "Mohon coba lagi."}` });
+    } finally {
+      setIsThinking(false);
+    }
+  }, [products, addMessageToHistory]);
 
-        const productDataForAI = products.map(product => ({
-            id: product.id,
-            name: product.name,
-            ingredients: product.ingredients,
-            price: product.price,
-            features: product.features,
-            img_link: product.img_link,
-            shop_link: product.shop_link,
-            category: product.category,
-            description: product.description,
-        }));
+  useEffect(() => {
+    if (products.length === 0) getProducts();
+  }, [getProducts, products.length]);
 
-        try {
-            const messagesForApi = latestChatHistory.map(msg => ({
-                role: msg.role === 'user' ? 'user' : 'model',
-                content: msg.role === 'user' ? 
-                    removeMarkdown(msg.text) : 
-                    msg.text + (msg.hiddenProductIdText || '')
-            }));
+  useEffect(() => {
+    if (initialPrompt?.trim() && products.length > 0 && !initialChatProcessed.current) {
+      initialChatProcessed.current = true;
 
-            messagesForApi.push({ role: 'user', content: removeMarkdown(prompt) });
+      const newMessage: ChatMessage = {
+        role: "user",
+        text: initialPrompt,
+        timestamp: Date.now(),
+      };
 
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    messages: messagesForApi,
-                    productsData: productDataForAI
-                }),
-            });
+      setChatHistory((prevHistory) => {
+        const updatedHistory = [...prevHistory, newMessage];
+        fetchAiRecommendations(initialPrompt, updatedHistory);
+        return updatedHistory;
+      });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
+      clearInitialPrompt();
+      setUserProblem("");
+    }
+  }, [initialPrompt, products.length, clearInitialPrompt, fetchAiRecommendations]);
 
-            const data = await response.json();
-            const aiRawResponse = data.content;
+  useEffect(scrollToBottom, [chatHistory, isThinking]);
 
-            let recommendedProductIds: number[] = [];
-            let hiddenProductIdText: string = '';
-            const productIdExtractRegex = /Produk Cocok \(ID\):\s*(.*?)(?:\n|$)/i;
-            const inlineIdRegex = /\s*\(ID:\s*\d+\)/g;
+  const handleUserMessage = useCallback(async (prompt: string): Promise<void> => {
+    if (!prompt.trim()) return;
 
-            const matchProductIds = aiRawResponse.match(productIdExtractRegex);
-            if (matchProductIds && matchProductIds[1]) {
-                const idsString = matchProductIds[1].trim();
-                if (idsString.toLowerCase() !== "tidak ada produk dari database yang cocok" && 
-                    idsString.toLowerCase() !== "tidak ada") {
-                    recommendedProductIds = idsString.split(',')
-                        .map(id => parseInt(id.trim()))
-                        .filter(id => !isNaN(id));
-                }
-                hiddenProductIdText = matchProductIds[0];
-            }
+    const newUserMessage: ChatMessage = {
+      role: "user",
+      text: prompt,
+      timestamp: Date.now(),
+    };
 
-            let textToRender = aiRawResponse
-                .replace(productIdExtractRegex, '')
-                .replace(inlineIdRegex, '')
-                .trim();
+    setChatHistory((prevHistory) => {
+      const updatedHistory = [...prevHistory, newUserMessage];
+      fetchAiRecommendations(prompt, updatedHistory);
+      return updatedHistory;
+    });
 
-            addMessageToHistory({
-                role: 'ai',
-                text: textToRender,
-                recommendedProductIds: recommendedProductIds.length > 0 ? recommendedProductIds : undefined,
-                hiddenProductIdText
-            });
+    setUserProblem("");
+  }, [fetchAiRecommendations]);
 
-        } catch (error: any) {
-            console.error("Error communicating with API:", error);
-            addMessageToHistory({
-                role: 'ai',
-                text: `Terjadi kesalahan saat mendapatkan rekomendasi: ${error.message || "Mohon coba lagi."}`
-            });
-        } finally {
-            setIsThinking(false);
-        }
-    }, [products, isThinking, addMessageToHistory]);
+  const handleSuggestedPromptClick = useCallback((prompt: string): void => {
+    initialChatProcessed.current = false;
+    handleUserMessage(prompt);
+  }, [handleUserMessage]);
 
-    useEffect(() => {
-        let isMounted = true;
-
-        if (products.length === 0) {
-            getProducts();
-        }
-
-        if (initialPrompt?.trim() && products.length > 0 && !initialChatProcessed.current && isMounted) {
-            const firstUserMessage: ChatMessage = {
-                role: 'user',
-                text: initialPrompt,
-                timestamp: Date.now()
-            };
-            
-            setChatHistory(prev => {
-                const updatedHistory = [...prev, firstUserMessage];
-                fetchAiRecommendations(initialPrompt, updatedHistory);
-                return updatedHistory;
-            });
-            
-            initialChatProcessed.current = true;
-            clearInitialPrompt();
-            setUserProblem("");
-        }
-
-        scrollToBottom();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [initialPrompt, products.length, getProducts, fetchAiRecommendations, clearInitialPrompt, scrollToBottom]);
-
-    const handleUserMessage = useCallback(async (prompt: string): Promise<void> => {
-        if (!prompt.trim()) return;
-
-        const newUserMessage: ChatMessage = {
-            role: 'user',
-            text: prompt,
-            timestamp: Date.now()
-        };
-
-        setChatHistory(prev => {
-            const updatedHistory = [...prev, newUserMessage];
-            fetchAiRecommendations(prompt, updatedHistory);
-            return updatedHistory;
-        });
-
-        setUserProblem("");
-    }, [fetchAiRecommendations]);
-
-    const handleSuggestedPromptClick = useCallback((prompt: string): void => {
-        initialChatProcessed.current = false;
-        handleUserMessage(prompt);
-    }, [handleUserMessage]);
 
     return (
         <div className="flex flex-col min-h-screen h-full bg-gray-100 pt-[100px]">
